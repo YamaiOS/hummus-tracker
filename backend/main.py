@@ -17,6 +17,8 @@ load_dotenv(Path(__file__).parent.parent / ".env")
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from .database import init_db
 from .routers import vessels, flow, prices, disruptions
@@ -115,3 +117,17 @@ async def overview():
         "oil_prices": oil_prices,
         "ais_stream": stream,
     }
+
+
+# ── Serve frontend static files (production) ──────────────────────────────────
+_STATIC_DIR = Path(__file__).parent.parent / "static"
+if _STATIC_DIR.is_dir():
+    app.mount("/assets", StaticFiles(directory=_STATIC_DIR / "assets"), name="assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        """Catch-all: serve index.html for client-side routing."""
+        file = _STATIC_DIR / full_path
+        if file.is_file():
+            return FileResponse(file)
+        return FileResponse(_STATIC_DIR / "index.html")
