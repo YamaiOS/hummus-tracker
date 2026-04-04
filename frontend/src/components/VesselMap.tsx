@@ -229,9 +229,16 @@ export default function VesselMap() {
 
       {/* Stats overlay */}
       {data && (
-        <div className="absolute top-4 right-4 z-[1000] bg-petro-card border border-petro-border rounded px-3 py-2 text-[11px] font-mono text-text-muted">
-          <span className="text-text-warm font-bold">{data.tanker_count}</span> TANKERS / 
-          <span className="text-petro-teal font-bold ml-1">{data.loaded_count}</span> LOADED
+        <div className="absolute top-4 right-4 z-[1000] flex flex-col items-end gap-2">
+          {data.stream_status?.mode === 'mock' && (
+            <div className="bg-petro-red/90 text-white px-3 py-1 rounded text-[11px] font-bold uppercase tracking-wide border border-white/20">
+              Simulated Data
+            </div>
+          )}
+          <div className="bg-petro-card border border-petro-border rounded px-3 py-2 text-[11px] font-mono text-text-muted">
+            <span className="text-text-warm font-bold">{data.tanker_count}</span> TANKERS / 
+            <span className="text-petro-teal font-bold ml-1">{data.loaded_count}</span> LOADED
+          </div>
         </div>
       )}
     </div>

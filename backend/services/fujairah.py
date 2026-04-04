@@ -23,37 +23,41 @@ def seed_fujairah_history(weeks: int = 26) -> None:
 
     Typical Fujairah ranges (in '000 barrels):
       - Light distillates: 5,500 - 8,500
-      - Middle distillates: 2,000 - 4,500
-      - Heavy/residues: 8,000 - 13,000
+      - Middle distillates: 2,000 - 6,000
+      - Heavy/residues: 8,000 - 15,000
     """
     with SessionLocal() as db:
-        if db.query(FujairahInventory).count() > 0:
-            return  # already seeded
+        existing_count = db.query(FujairahInventory).count()
+        if existing_count >= weeks:
+            return
 
-        now = datetime.now(timezone.utc)
+        now = datetime.utcnow()
         # Find most recent Wednesday
         days_since_wed = (now.weekday() - 2) % 7
         latest_wed = now - timedelta(days=days_since_wed)
 
         # Start values (mid-range)
         light = 7000.0
-        middle = 3200.0
-        heavy = 10500.0
+        middle = 3500.0
+        heavy = 11000.0
 
         rows = []
         for i in range(weeks - 1, -1, -1):
             wed = latest_wed - timedelta(weeks=i)
             date_str = wed.strftime("%Y-%m-%d")
+            
+            if db.query(FujairahInventory).filter(FujairahInventory.date == date_str).first():
+                continue
 
-            # Random walk with mean reversion
-            light += random.uniform(-400, 400)
-            light = max(5500, min(8500, light))
+            # Random walk with higher variance
+            light += random.uniform(-600, 600)
+            light = max(5000, min(9000, light))
 
-            middle += random.uniform(-300, 300)
-            middle = max(2000, min(4500, middle))
+            middle += random.uniform(-500, 500)
+            middle = max(1800, min(6500, middle))
 
-            heavy += random.uniform(-500, 500)
-            heavy = max(8000, min(13000, heavy))
+            heavy += random.uniform(-800, 800)
+            heavy = max(7000, min(16000, heavy))
 
             total = light + middle + heavy
             rows.append(FujairahInventory(
@@ -66,7 +70,7 @@ def seed_fujairah_history(weeks: int = 26) -> None:
 
         db.add_all(rows)
         db.commit()
-        logger.info("Seeded %d weeks of Fujairah inventory data.", weeks)
+        logger.info("Seeded/Updated Fujairah inventory data.")
 
 
 async def get_fujairah_history(limit: int = 52) -> List[dict]:

@@ -19,14 +19,14 @@ async def generate_daily_brief(date_str: Optional[str] = None):
     Content: Flow vs baseline, new Dark/STS, EFS change, Active disruptions.
     """
     if not date_str:
-        date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        date_str = datetime.utcnow().strftime("%Y-%m-%d")
 
     status = await get_strait_status()
     
     with SessionLocal() as db:
         try:
             # 1. Gather stats for the brief
-            cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+            cutoff = datetime.utcnow() - timedelta(hours=24)
             
             # New dark vessels in last 24h
             new_dark = db.query(DarkVessel).filter(DarkVessel.detected_at >= cutoff).all()
@@ -38,6 +38,7 @@ async def generate_daily_brief(date_str: Optional[str] = None):
             latest_m = db.query(MarketData).order_by(MarketData.date.desc()).first()
             prev_m = db.query(MarketData).order_by(MarketData.date.desc()).offset(1).first()
             efs_move = (latest_m.brent_dubai_efs - prev_m.brent_dubai_efs) if latest_m and prev_m else 0.0
+            efs_val = latest_m.brent_dubai_efs if latest_m else 0.0
 
             # 2. Format the Markdown
             lines = [
@@ -50,7 +51,7 @@ async def generate_daily_brief(date_str: Optional[str] = None):
                 f"- **STS Transfers:** {len(new_sts)} suspicious proximities flagged",
                 "",
                 "### 🛢️ Market Structure",
-                f"- **Brent-Dubai EFS:** ${latest_m.brent_dubai_efs:.2f}/bbl" if latest_m else "- **Brent-Dubai EFS:** N/A",
+                f"- **Brent-Dubai EFS:** ${efs_val:.2f}/bbl",
                 f"- **24h Move:** {'📈' if efs_move > 0 else '📉'} ${abs(efs_move):.2f}" if efs_move != 0 else "- **24h Move:** Unchanged",
                 "",
                 "### ⚠️ Notable Alerts",

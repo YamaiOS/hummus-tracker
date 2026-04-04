@@ -18,6 +18,16 @@ export default function DailyFlowTrend() {
   }
 
   const summaries = data?.summaries || []
+
+  if (summaries.length < 2) {
+    return (
+      <div className="py-8 text-center">
+        <p className="text-xs text-text-faint uppercase font-bold tracking-wide">Insufficient flow data</p>
+        <p className="text-xs text-text-faint mt-1">Backfilling from IMF PortWatch — check back shortly</p>
+      </div>
+    )
+  }
+
   const chartData = summaries.map((s: any) => ({
     date: new Date(s.date).toLocaleDateString([], { month: 'short', day: 'numeric' }),
     mbpd: s.estimated_mbpd,

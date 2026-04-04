@@ -24,14 +24,19 @@ from .database import init_db, SessionLocal
 from .models import DailyTransitSummary
 from .routers import vessels, flow, prices, disruptions, fujairah, congestion, weather
 from .services.ais_stream import run_ais_stream
-from .services.scheduler import start_scheduler, aggregate_daily_transits
+from .services.scheduler import start_scheduler, aggregate_daily_transits, backfill_daily_transits
 from .services.compliance import seed_quotas
 from .services.insurance import seed_insurance_data
 from .services.bunkers import seed_bunker_history
 from .services.fujairah import seed_fujairah_history
+from .services.weather import fetch_terminal_weather
+from .services.market_data import persist_daily_market_metrics
 from .services.status import get_strait_status
 from .services.activity import get_recent_activity
-from .services.daily_brief import get_latest_brief
+from .services.daily_brief import get_latest_brief, generate_daily_brief
+from .services.dark_vessels import detect_dark_vessels
+from .services.sts_detection import detect_sts_events
+from .services.congestion import update_port_congestion
 
 logging.basicConfig(
     level=logging.INFO,
@@ -57,8 +62,26 @@ async def lifespan(app: FastAPI):
     # Start background scheduler for aggregation
     scheduler = start_scheduler()
     
-    # Run an initial aggregation for today in the background
-    asyncio.create_task(aggregate_daily_transits(datetime.now().strftime("%Y-%m-%d")))
+    # Run initial data fetch and analysis in the background (staggered to avoid DB locks)
+    async def run_startup_tasks():
+        await asyncio.sleep(2) # let the stream/scheduler settle
+        asyncio.create_task(fetch_terminal_weather())
+        await asyncio.sleep(1)
+        asyncio.create_task(update_port_congestion())
+        await asyncio.sleep(1)
+        asyncio.create_task(persist_daily_market_metrics())
+        await asyncio.sleep(1)
+        asyncio.create_task(backfill_daily_transits(30))
+        await asyncio.sleep(1)
+        asyncio.create_task(detect_dark_vessels())
+        await asyncio.sleep(1)
+        asyncio.create_task(detect_sts_events())
+        await asyncio.sleep(1)
+        asyncio.create_task(aggregate_daily_transits(datetime.now().strftime("%Y-%m-%d")))
+        await asyncio.sleep(1)
+        asyncio.create_task(generate_daily_brief())
+
+    asyncio.create_task(run_startup_tasks())
 
     yield
 
@@ -131,7 +154,13 @@ async def overview():
     from .services.imf_portwatch import fetch_hormuz_summary
     from sqlalchemy import desc
 
+    from .services.dark_vessels import get_active_dark_vessels
+    from .services.sts_detection import get_active_sts_events
+    
     vessels = get_live_vessels()
+    dark_vessels = await get_active_dark_vessels()
+    sts_events = await get_active_sts_events()
+    
     tankers = [v for v in vessels if v.get("vessel_type", 0) in range(70, 90)]
     loaded_outbound = [v for v in tankers if v.get("is_loaded") and v.get("direction") == "outbound"]
     ballast_inbound = [v for v in tankers if not v.get("is_loaded") and v.get("direction") == "inbound"]
@@ -143,6 +172,8 @@ async def overview():
             "tankers_active": len(tankers),
             "loaded_tankers": len(loaded_outbound),
             "ballast_tankers": len(ballast_inbound),
+            "dark_vessel_count": len(dark_vessels),
+            "sts_event_count": len(sts_events),
             "total_dwt_outbound": sum(v.get("dwt", 0) or 0 for v in loaded_outbound),
             "inbound_outbound_ratio": (len(loaded_outbound) / len(ballast_inbound)) if len(ballast_inbound) > 0 else 1.0,
             "source": "live",
@@ -157,6 +188,8 @@ async def overview():
                 "tankers_active": summary.tanker_count or 0,
                 "loaded_tankers": summary.loaded_count or 0,
                 "ballast_tankers": summary.ballast_count or 0,
+                "dark_vessel_count": 0,
+                "sts_event_count": 0,
                 "total_dwt_outbound": summary.total_dwt_outbound or 0,
                 "inbound_outbound_ratio": (summary.loaded_count / summary.ballast_count) if summary.ballast_count else 1.0,
                 "source": "cached",

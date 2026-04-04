@@ -92,8 +92,13 @@ async def get_supply_chain_impact(db: Session = Depends(get_db)):
 async def get_freight_estimates(db: Session = Depends(get_db)):
     """Heuristic freight charge modeling based on fuel and risk premiums."""
     from ..services.fred import get_latest_prices
+    from ..services.status import get_strait_status
+    
     prices = await get_latest_prices()
     brent = prices.get("brent") or 80.0
+    
+    status = await get_strait_status()
+    health_score = status.get("score", 100)
     
     # Calculate Risk Multiplier (same logic as impact)
     thirty_days_ago = (datetime.utcnow() - timedelta(days=30)).strftime("%Y-%m-%d")
@@ -101,36 +106,40 @@ async def get_freight_estimates(db: Session = Depends(get_db)):
     risk_factor = 1.0 + sum([8.0 if d.severity == "critical" else 3.0 if d.severity == "high" else 1.0 for d in recent_disruptions]) / 10.0
 
     # Heuristic: WS (Worldscale) baseline + Fuel adjustment + Risk premium
-    # WS 100 roughly equals a baseline cost.
     fuel_adj = (brent - 70) * 0.5
     
+    sentiment = "NEUTRAL"
+    if health_score < 60: sentiment = "STRESSED"
+    elif health_score < 85: sentiment = "CAUTIOUS"
+    elif risk_factor > 1.5: sentiment = "BULLISH"
+
     estimates = [
         {
             "class": "VLCC",
             "route": "MEG -> Singapore (TD3C)",
             "ws_points": round((60 + fuel_adj) * risk_factor, 1),
             "tce_day_rate_usd": round((45000 + (brent * 150)) * risk_factor, 0),
-            "status": "RISING" if risk_factor > 1.2 else "STABLE"
+            "status": "RISING" if risk_factor > 1.2 or health_score < 70 else "STABLE"
         },
         {
             "class": "Suezmax",
             "route": "MEG -> Med (TD23)",
             "ws_points": round((75 + fuel_adj) * risk_factor, 1),
             "tce_day_rate_usd": round((35000 + (brent * 120)) * risk_factor, 0),
-            "status": "RISING" if risk_factor > 1.2 else "STABLE"
+            "status": "RISING" if risk_factor > 1.2 or health_score < 70 else "STABLE"
         },
         {
             "class": "Aframax",
             "route": "MEG -> SE Asia (TD8)",
             "ws_points": round((110 + fuel_adj) * risk_factor, 1),
             "tce_day_rate_usd": round((30000 + (brent * 100)) * risk_factor, 0),
-            "status": "STABLE"
+            "status": "RISING" if health_score < 70 else "STABLE"
         }
     ]
     
     return {
         "date": datetime.utcnow().date().isoformat(),
-        "market_sentiment": "BULLISH" if risk_factor > 1.5 else "NEUTRAL",
+        "market_sentiment": sentiment,
         "brent_ref": brent,
         "risk_multiplier": round(risk_factor, 2),
         "estimates": estimates

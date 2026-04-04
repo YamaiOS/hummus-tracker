@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import math
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from ..database import SessionLocal
 from ..models import STSEvent
@@ -31,6 +31,40 @@ def haversine_distance(lat1, lon1, lat2, lon2):
 async def detect_sts_events():
     """Detect pairs of vessels < 500m apart, both slow, one loaded."""
     vessels = get_live_vessels()
+    
+    # Fallback to database if in-memory cache is empty (e.g., during cold boot or separate process)
+    if not vessels:
+        with SessionLocal() as db:
+            from sqlalchemy import select, func
+            from ..models import VesselTransit
+            now = datetime.utcnow()
+            ten_minutes_ago = now - timedelta(minutes=10)
+            
+            subq = (
+                select(VesselTransit.mmsi, func.max(VesselTransit.observed_at).label("max_ts"))
+                .where(VesselTransit.observed_at >= ten_minutes_ago)
+                .group_by(VesselTransit.mmsi)
+                .subquery()
+            )
+
+            latest_transits = db.execute(
+                select(VesselTransit)
+                .join(subq, (VesselTransit.mmsi == subq.c.mmsi) & (VesselTransit.observed_at == subq.c.max_ts))
+            ).scalars().all()
+            
+            vessels = [
+                {
+                    "mmsi": t.mmsi,
+                    "lat": t.latitude,
+                    "lon": t.longitude,
+                    "speed": t.speed,
+                    "is_loaded": t.is_loaded,
+                    "name": t.vessel_name,
+                    "vessel_type": t.vessel_type
+                }
+                for t in latest_transits
+            ]
+
     tankers = [v for v in vessels if v.get("vessel_type", 0) in range(70, 90)]
 
     if len(tankers) < 2:
@@ -103,7 +137,7 @@ async def detect_sts_events():
                 e_key = tuple(sorted([event.vessel_a_mmsi, event.vessel_b_mmsi]))
                 if e_key not in detected_pairs:
                     event.is_active = False
-                    event.resolved_at = datetime.now(timezone.utc)
+                    event.resolved_at = datetime.utcnow()
             db.commit()
         except Exception as e:
             db.rollback()

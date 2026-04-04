@@ -32,7 +32,7 @@ export default function PriceChart() {
     date: p.date,
     brent: p.brent,
     wti: p.wti,
-    transits: transitMap.get(p.date) ?? undefined,
+    transits: transitMap.get(p.date ?? '') ?? undefined,
   }))
 
   return (

@@ -42,22 +42,6 @@ async def update_port_congestion():
             cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
 
             for name, coords in TERMINALS.items():
-                # Find tankers near this terminal in last 24h (slow = anchoring/berthing)
-                mmsis_at_port = db.execute(
-                    func.distinct(VesselTransit.mmsi),
-                ).where(
-                    VesselTransit.observed_at >= cutoff,
-                    VesselTransit.speed < 2.0,
-                    VesselTransit.latitude.between(
-                        coords["lat"] - PROXIMITY_DEG,
-                        coords["lat"] + PROXIMITY_DEG,
-                    ),
-                    VesselTransit.longitude.between(
-                        coords["lon"] - PROXIMITY_DEG,
-                        coords["lon"] + PROXIMITY_DEG,
-                    ),
-                )
-                # Use proper select for the query
                 from sqlalchemy import select
                 stmt = (
                     select(VesselTransit.mmsi)

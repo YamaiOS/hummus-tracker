@@ -30,25 +30,28 @@ export default function BunkerPricesPanel() {
   }))
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 flex flex-col h-full">
       {latest && (
         <div className="grid grid-cols-3 gap-4">
-          <div className="p-2 bg-petro-bg border border-petro-border rounded text-center">
-            <p className="text-xs text-text-muted uppercase font-bold mb-1">VLSFO (0.5%S)</p>
+          <div className="p-2 bg-petro-bg border border-petro-border rounded text-center relative overflow-hidden">
+            <div className="absolute top-0 left-0 bg-petro-teal w-1 h-full" />
+            <p className="text-[11px] text-text-muted uppercase font-bold mb-1">VLSFO 0.5%</p>
             <p className="text-sm font-mono font-bold text-text-warm">${latest.vlsfo_price.toFixed(2)}</p>
           </div>
-          <div className="p-2 bg-petro-bg border border-petro-border rounded text-center">
-            <p className="text-xs text-text-muted uppercase font-bold mb-1">HSFO (380cSt)</p>
+          <div className="p-2 bg-petro-bg border border-petro-border rounded text-center relative overflow-hidden">
+            <div className="absolute top-0 left-0 bg-petro-gold w-1 h-full" />
+            <p className="text-[11px] text-text-muted uppercase font-bold mb-1">HSFO 380</p>
             <p className="text-sm font-mono font-bold text-text-warm">${latest.hsfo_price.toFixed(2)}</p>
           </div>
-          <div className="p-2 bg-petro-bg border border-petro-border rounded text-center">
-            <p className="text-xs text-text-muted uppercase font-bold mb-1">Hi-5 Spread</p>
+          <div className="p-2 bg-petro-bg border border-petro-border rounded text-center relative overflow-hidden">
+            <div className="absolute top-0 left-0 bg-petro-gold/50 w-1 h-full" />
+            <p className="text-[11px] text-text-muted uppercase font-bold mb-1">HI-5 SPREAD</p>
             <p className="text-sm font-mono font-bold text-petro-gold">${latest.spread.toFixed(2)}</p>
           </div>
         </div>
       )}
 
-      <div className="h-48 w-full bg-petro-bg rounded-md p-2 border border-petro-border">
+      <div className="flex-grow min-h-[180px] w-full bg-petro-bg rounded-md p-2 border border-petro-border">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1c2e4a" vertical={false} />
@@ -90,6 +93,11 @@ export default function BunkerPricesPanel() {
             />
           </LineChart>
         </ResponsiveContainer>
+      </div>
+
+      <div className="flex justify-between items-center text-[11px] font-mono text-text-faint px-1">
+        <span>PORT: FUJAIRAH (FOB)</span>
+        <span>DATA: SHIP & BUNKER</span>
       </div>
     </div>
   )

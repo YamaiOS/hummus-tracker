@@ -48,6 +48,39 @@ def calculate_distance(p1, p2):
     import math
     return math.sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2)
 
+async def backfill_daily_transits(days: int = 30):
+    """Backfill historical transit summaries using IMF PortWatch data."""
+    from .imf_portwatch import fetch_hormuz_transits
+    
+    transits = await fetch_hormuz_transits(days=days)
+    if not transits:
+        return
+
+    with SessionLocal() as db:
+        try:
+            for t in transits:
+                date_str = t["date"]
+                exists = db.query(DailyTransitSummary).filter(DailyTransitSummary.date == date_str).first()
+                if not exists:
+                    # Map IMF fields to our DailyTransitSummary model
+                    # Note: IMF doesn't give us DWT or full mbpd, so we estimate
+                    # based on 1.2M bbl per tanker transit as a rough average.
+                    db.add(DailyTransitSummary(
+                        date=date_str,
+                        total_vessels=t["total_transits"] or 0,
+                        tanker_count=t["tanker_transits"] or 0,
+                        loaded_count=(t["tanker_transits"] or 0) // 2, # rough guess
+                        ballast_count=(t["tanker_transits"] or 0) // 2,
+                        estimated_mbpd=((t["tanker_transits"] or 0) * 1.2) / 2.0, # outbound only
+                        total_dwt_outbound=(t["capacity_tanker"] or 0) / 2.0,
+                        brent_price=None, # will be populated if FRED history exists
+                    ))
+            db.commit()
+            logger.info("Historical transit backfill complete for %s records.", len(transits))
+        except Exception as e:
+            db.rollback()
+            logger.error("Error backfilling transits: %s", e)
+
 async def aggregate_daily_transits(date: str | None = None) -> None:
     """Summarize vessel transits for a given date (default: yesterday)."""
     if not date:
@@ -133,7 +166,7 @@ async def aggregate_daily_transits(date: str | None = None) -> None:
         try:
             baseline_data = await fetch_hormuz_flow()
             baseline = baseline_data["baseline_mbpd"]
-            if baseline > 0:
+            if baseline > 0 and summary.total_vessels > 0:
                 deviation_pct = (summary.estimated_mbpd / baseline) * 100
                 if deviation_pct < 85:
                     msg = f"CRITICAL: Strait flow at {round(deviation_pct)}% of baseline ({round(summary.estimated_mbpd, 2)} mbpd)"

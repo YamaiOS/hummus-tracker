@@ -22,7 +22,8 @@ export default function FloatingStoragePanel() {
     <div className="space-y-0 divide-y divide-petro-border">
       {vessels.length === 0 ? (
         <div className="py-8 text-center">
-          <p className="text-xs text-text-faint uppercase font-bold tracking-wide">No floating storage</p>
+          <p className="text-xs text-text-faint uppercase font-bold tracking-wide">No floating storage detected</p>
+          <p className="text-xs text-text-faint mt-1">Detection runs hourly</p>
         </div>
       ) : (
         vessels.map((v) => (

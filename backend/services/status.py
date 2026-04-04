@@ -33,7 +33,7 @@ async def get_strait_status() -> Dict:
             baseline = baseline_data["baseline_mbpd"]
             
             # Current 24h flow — deduplicate by MMSI (take latest observation per vessel)
-            cutoff_24h = datetime.now(timezone.utc) - timedelta(hours=24)
+            cutoff_24h = datetime.utcnow() - timedelta(hours=24)
             from sqlalchemy.orm import aliased
             latest_subq = (
                 select(
@@ -82,7 +82,7 @@ async def get_strait_status() -> Dict:
             if latest_market:
                 avg_efs = db.execute(
                     select(func.avg(MarketData.brent_dubai_efs))
-                    .where(MarketData.date >= (datetime.now(timezone.utc) - timedelta(days=30)).strftime("%Y-%m-%d"))
+                    .where(MarketData.date >= (datetime.utcnow() - timedelta(days=30)).strftime("%Y-%m-%d"))
                 ).scalar() or latest_market.brent_dubai_efs
                 
                 deviation = abs(latest_market.brent_dubai_efs - avg_efs)
@@ -93,7 +93,7 @@ async def get_strait_status() -> Dict:
 
             # 5. Disruptions (10%)
             # Recent (last 7 days) disruptions
-            recent_cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).strftime("%Y-%m-%d")
+            recent_cutoff = (datetime.utcnow() - timedelta(days=7)).strftime("%Y-%m-%d")
             disruptions = db.query(DisruptionEvent).filter(DisruptionEvent.date >= recent_cutoff).all()
             if disruptions:
                 max_severity = 0
@@ -115,7 +115,7 @@ async def get_strait_status() -> Dict:
                 "level": level,
                 "score": round(score),
                 "summary": summary,
-                "timestamp": datetime.now(timezone.utc).isoformat()
+                "timestamp": datetime.utcnow().isoformat()
             }
         except Exception as e:
             logger.error(f"Error calculating strait status: {e}")

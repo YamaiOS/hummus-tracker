@@ -120,7 +120,8 @@ async def calculate_compliance() -> list[ComplianceRecord]:
             quotas = db.query(OPECQuota).all()
             quota_map = {q.country: q for q in quotas}
 
-            cutoff = datetime.now(timezone.utc) - timedelta(days=7)
+            now = datetime.utcnow()
+            cutoff = now - timedelta(days=7)
 
             # Get unique outbound loaded tankers in last 7 days
             all_transits = (
@@ -131,6 +132,14 @@ async def calculate_compliance() -> list[ComplianceRecord]:
                 .order_by(VesselTransit.observed_at.desc())
                 .all()
             )
+
+            # Find the first observation in this period to normalize the average
+            first_obs = db.query(func.min(VesselTransit.observed_at)).filter(VesselTransit.observed_at >= cutoff).scalar()
+            if first_obs:
+                days_diff = (now - first_obs).total_seconds() / 86400
+                avg_days = max(0.1, min(7.0, days_diff))
+            else:
+                avg_days = 7.0
 
             # Deduplicate by MMSI
             unique = {}
@@ -162,7 +171,7 @@ async def calculate_compliance() -> list[ComplianceRecord]:
             results = []
             for country, q in quota_map.items():
                 total_barrels = country_barrels.get(country, 0)
-                obs_mbpd = (total_barrels / 7.0) / 1_000_000
+                obs_mbpd = (total_barrels / avg_days) / 1_000_000
 
                 delta = obs_mbpd - q.quota_mbpd if not q.is_exempt else 0.0
                 comp_pct = (obs_mbpd / q.quota_mbpd * 100) if q.quota_mbpd > 0 else 100.0

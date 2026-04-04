@@ -18,6 +18,15 @@ export default function WeatherAlertsPanel() {
 
   const terminals = weather || []
 
+  if (terminals.length === 0) {
+    return (
+      <div className="py-8 text-center">
+        <p className="text-xs text-text-faint uppercase font-bold tracking-wide">Awaiting weather data</p>
+        <p className="text-xs text-text-faint mt-1">Updates every 30 min</p>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-0 divide-y divide-petro-border">
       {terminals.map((t) => (

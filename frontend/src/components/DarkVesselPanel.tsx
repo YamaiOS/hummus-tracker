@@ -22,7 +22,8 @@ export default function DarkVesselPanel() {
     <div className="space-y-0 divide-y divide-petro-border">
       {vessels.length === 0 ? (
         <div className="py-8 text-center">
-          <p className="text-xs text-text-faint uppercase font-bold tracking-wide">No dark vessels</p>
+          <p className="text-xs text-text-faint uppercase font-bold tracking-wide">No dark vessels detected</p>
+          <p className="text-xs text-text-faint mt-1">Detection runs hourly</p>
         </div>
       ) : (
         vessels.map((v) => (
@@ -50,7 +51,12 @@ export default function DarkVesselPanel() {
               <div className="flex gap-1.5">
                 <span className="text-text-faint uppercase font-bold">SILENT:</span>
                 <span className="text-petro-red font-bold">
-                  {Math.round((new Date().getTime() - new Date(v.last_observed_at).getTime()) / 3600000)}h
+                  {(() => {
+                    const diffMs = new Date().getTime() - new Date(v.last_observed_at).getTime()
+                    const diffMins = Math.round(diffMs / 60000)
+                    if (diffMins < 60) return `${diffMins}m`
+                    return `${Math.round(diffMins / 60)}h`
+                  })()}
                 </span>
               </div>
               <div className="text-right">

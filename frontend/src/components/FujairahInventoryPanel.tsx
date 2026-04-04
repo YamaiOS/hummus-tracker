@@ -27,25 +27,25 @@ export default function FujairahInventoryPanel() {
   const latest = history?.[0]
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 flex flex-col h-full">
       {latest && (
         <div className="grid grid-cols-3 gap-2">
           <div className="p-2 bg-petro-bg border border-petro-border rounded text-center">
-            <p className="text-xs text-text-muted uppercase font-bold mb-1">LIGHT</p>
-            <p className="text-sm font-mono font-bold text-text-warm">{(latest.light_distillates / 1000).toFixed(1)}M</p>
+            <p className="text-[11px] text-text-muted uppercase font-bold mb-1">LIGHT ('000)</p>
+            <p className="text-sm font-mono font-bold text-text-warm">{(latest.light_distillates).toLocaleString()}</p>
           </div>
           <div className="p-2 bg-petro-bg border border-petro-border rounded text-center">
-            <p className="text-xs text-text-muted uppercase font-bold mb-1">MIDDLE</p>
-            <p className="text-sm font-mono font-bold text-text-warm">{(latest.middle_distillates / 1000).toFixed(1)}M</p>
+            <p className="text-[11px] text-text-muted uppercase font-bold mb-1">MIDDLE ('000)</p>
+            <p className="text-sm font-mono font-bold text-text-warm">{(latest.middle_distillates).toLocaleString()}</p>
           </div>
           <div className="p-2 bg-petro-bg border border-petro-border rounded text-center">
-            <p className="text-xs text-text-muted uppercase font-bold mb-1">HEAVY</p>
-            <p className="text-sm font-mono font-bold text-text-warm">{(latest.heavy_distillates_residues / 1000).toFixed(1)}M</p>
+            <p className="text-[11px] text-text-muted uppercase font-bold mb-1">HEAVY ('000)</p>
+            <p className="text-sm font-mono font-bold text-text-warm">{(latest.heavy_distillates_residues).toLocaleString()}</p>
           </div>
         </div>
       )}
 
-      <div className="h-48 w-full bg-petro-bg rounded-md p-2 border border-petro-border">
+      <div className="flex-grow min-h-[180px] w-full bg-petro-bg rounded-md p-2 border border-petro-border">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1c2e4a" vertical={false} />
@@ -72,6 +72,11 @@ export default function FujairahInventoryPanel() {
             <Bar dataKey="heavy" name="HEAVY" stackId="a" fill="#8b9bb4" />
           </BarChart>
         </ResponsiveContainer>
+      </div>
+      
+      <div className="flex justify-between items-center text-[11px] font-mono text-text-faint px-1">
+        <span>SOURCE: FOIZ WEEKLY</span>
+        <span>LATEST: {latest?.date}</span>
       </div>
     </div>
   )

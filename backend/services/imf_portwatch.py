@@ -66,9 +66,13 @@ async def fetch_hormuz_transits(days: int = 90) -> List[Dict]:
             else:
                 continue
 
+            n_total = attrs.get("n_total", 0)
+            if n_total > 50: # Outlier filtering for Feb 28 spike
+                continue
+
             result.append({
                 "date": date_str,
-                "total_transits": attrs.get("n_total", 0),
+                "total_transits": n_total,
                 "tanker_transits": attrs.get("n_tanker", 0),
                 "bulk_transits": attrs.get("n_dry_bulk", 0),
                 "container_transits": attrs.get("n_container", 0),

@@ -41,13 +41,19 @@ export interface LiveVesselsResponse {
     last_message: string | null
     total_messages: number
     active_vessels: number
+    mode?: 'live' | 'mock' | 'offline'
   }
 }
 
 export interface OilPrice {
-  date: string
+  date?: string
   brent?: number
+  brent_date?: string
+  is_stale?: boolean
+  brent_futures?: number
+  brent_futures_date?: string
   wti?: number
+  wti_date?: string
 }
 
 export interface DisruptionEvent {
@@ -68,6 +74,8 @@ export interface OverviewResponse {
     tankers_active: number
     loaded_tankers: number
     ballast_tankers: number
+    dark_vessel_count?: number
+    sts_event_count?: number
     total_dwt_outbound: number
     inbound_outbound_ratio: number
     source?: string
@@ -78,7 +86,7 @@ export interface OverviewResponse {
     key_exporters: Array<{ country: string; mbpd: number }>
   }
   imf_portwatch: Record<string, any>
-  oil_prices: { brent?: number; wti?: number }
+  oil_prices: OilPrice
   ais_stream: {
     connected: boolean
     total_messages: number

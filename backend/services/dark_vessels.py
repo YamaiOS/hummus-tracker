@@ -16,11 +16,11 @@ EXIT_MARGIN = 0.1  # degrees from bbox edge
 
 
 async def detect_dark_vessels():
-    """Identify vessels last seen in the bbox with no AIS updates for > 6 hours."""
+    """Identify vessels last seen in the bbox with no AIS updates for > 1 minute."""
     with SessionLocal() as db:
         try:
-            now = datetime.now(timezone.utc)
-            six_hours_ago = now - timedelta(hours=6)
+            now = datetime.utcnow()
+            one_minute_ago = now - timedelta(minutes=1)
 
             # Re-check existing dark vessels: have they reappeared?
             active_dark = db.query(DarkVessel).filter(DarkVessel.is_active == True).all()
@@ -42,12 +42,12 @@ async def detect_dark_vessels():
                     )
                     logger.info("Vessel %s reappeared. Resolved.", dv.mmsi)
 
-            # Find new candidates: last seen 6-24 hours ago
-            twenty_four_hours_ago = now - timedelta(hours=24)
+            # Find new candidates: last seen 1-10 minutes ago
+            ten_minutes_ago = now - timedelta(minutes=10)
 
             subq = (
                 select(VesselTransit.mmsi, func.max(VesselTransit.observed_at).label("max_ts"))
-                .where(VesselTransit.observed_at >= twenty_four_hours_ago)
+                .where(VesselTransit.observed_at >= ten_minutes_ago)
                 .group_by(VesselTransit.mmsi)
                 .subquery()
             )
@@ -61,7 +61,7 @@ async def detect_dark_vessels():
                 if not (t.vessel_type and t.vessel_type in range(70, 90)):
                     continue
 
-                if t.observed_at < six_hours_ago:
+                if t.observed_at < one_minute_ago:
                     # Check if near bbox boundary (likely just exited normally)
                     near_edge = (
                         abs(t.longitude - HORMUZ_BBOX["lon_min"]) < EXIT_MARGIN or

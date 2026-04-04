@@ -47,13 +47,60 @@ async def fetch_oil_prices(
     return result
 
 
-async def get_latest_prices() -> Dict[str, Optional[float]]:
-    """Get most recent Brent and WTI prices from FRED."""
+async def get_latest_prices() -> Dict[str, any]:
+    """Get both FRED spot and yfinance futures Brent prices.
+
+    FRED DCOILBRENTEU = physical spot (EIA/Refinitiv), lags 1-5 biz days.
+    yfinance BZ=F    = ICE front-month futures, near-real-time.
+    """
+    from .market_data import fetch_market_metrics
+
+    # 1. yfinance futures (live)
+    futures_price = None
+    futures_date = None
+    try:
+        metrics = await fetch_market_metrics()
+        if metrics:
+            futures_price = metrics.get("brent_m1")
+            futures_date = metrics.get("date")
+    except Exception:
+        pass
+
+    # 2. FRED spot (lagged)
     prices = await fetch_oil_prices(days=14)
-    if not prices:
-        return {"brent": None, "wti": None}
-    latest = prices[-1]
-    return {"brent": latest.get("brent"), "wti": latest.get("wti")}
+    fred_brent = None
+    fred_brent_date = None
+    wti_val = None
+    wti_date = None
+    fred_stale = False
+
+    if prices:
+        latest = prices[-1]
+        fred_brent = latest.get("brent")
+        fred_brent_date = latest.get("date")
+        wti_val = latest.get("wti")
+        wti_date = latest.get("date")
+
+        if fred_brent_date:
+            try:
+                dt = datetime.strptime(fred_brent_date, "%Y-%m-%d")
+                if (datetime.utcnow() - dt).days > 3:
+                    fred_stale = True
+            except Exception:
+                pass
+
+    return {
+        # FRED spot
+        "brent": fred_brent,
+        "brent_date": fred_brent_date,
+        "is_stale": fred_stale,
+        # ICE futures
+        "brent_futures": futures_price,
+        "brent_futures_date": futures_date,
+        # WTI
+        "wti": wti_val,
+        "wti_date": wti_date,
+    }
 
 
 async def _fetch_series(series_id: str, start_date: str) -> List[Dict]:

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { fetchOPECCompliance } from '../api/client'
+import { fetchOPECCompliance, fetchOverview } from '../api/client'
 
 export default function OPECCompliancePanel() {
   const { data, isLoading } = useQuery({
@@ -7,6 +7,15 @@ export default function OPECCompliancePanel() {
     queryFn: fetchOPECCompliance,
     refetchInterval: 3600_000,
   })
+
+  const { data: overview } = useQuery({
+    queryKey: ['overview'],
+    queryFn: fetchOverview,
+    refetchInterval: 60_000,
+  })
+
+  const isMock = overview?.ais_stream?.mode === 'mock'
+  const hasInsufficientData = !isMock && (overview?.strait_status?.tankers_active ?? 0) < 5
 
   if (isLoading && !data) {
     return (
@@ -20,6 +29,16 @@ export default function OPECCompliancePanel() {
 
   return (
     <div className="space-y-0">
+      {isMock && (
+        <div className="px-2 py-1.5 mb-2 bg-petro-gold/10 border border-petro-gold/20 rounded">
+          <p className="text-xs text-petro-gold font-bold uppercase tracking-wide">Simulated — observed values derived from mock AIS</p>
+        </div>
+      )}
+      {hasInsufficientData && (
+        <div className="px-2 py-1.5 mb-2 bg-petro-gold/10 border border-petro-gold/20 rounded">
+          <p className="text-xs text-petro-gold font-bold uppercase tracking-wide">Insufficient AIS coverage — observed values unreliable</p>
+        </div>
+      )}
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>

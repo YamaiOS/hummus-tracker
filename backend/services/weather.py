@@ -42,13 +42,13 @@ async def fetch_terminal_weather():
                     "latitude": coords["lat"],
                     "longitude": coords["lon"],
                     "current": "wind_speed_10m,wind_gusts_10m",
-                    "wind_speed_unit": "knots",
+                    "wind_speed_unit": "kn",
                     "timezone": "auto"
                 }
                 
                 resp = await client.get(url, params=params)
                 if resp.status_code != 200:
-                    logger.warning(f"Failed to fetch weather for {name}: {resp.status_code}")
+                    logger.warning(f"Failed to fetch weather for {name}: {resp.status_code} - {resp.text}")
                     continue
                     
                 data = resp.json()

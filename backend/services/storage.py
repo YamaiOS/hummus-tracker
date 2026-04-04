@@ -14,10 +14,15 @@ logger = logging.getLogger(__name__)
 
 
 async def update_floating_storage_detections():
-    """Identify vessels stationary (speed < 0.5 kn) and loaded for > 48 hours."""
+    """Identify vessels stationary (speed < 0.5 kn) and loaded for > 48 hours (1h in mock mode)."""
+    from .ais_stream import get_stream_status
+    stream = get_stream_status()
+    threshold_hrs = 1.0 if stream.get("mode") == "mock" else 48.0
+
     with SessionLocal() as db:
         try:
-            cutoff_recent = datetime.now(timezone.utc) - timedelta(hours=72)
+            now = datetime.utcnow()
+            cutoff_recent = now - timedelta(hours=72)
             recent_mmsis = db.execute(
                 select(VesselTransit.mmsi)
                 .where(VesselTransit.observed_at >= cutoff_recent)
@@ -48,7 +53,7 @@ async def update_floating_storage_detections():
                             stationary_streak_start = obs.observed_at
 
                         duration = (obs.observed_at - stationary_streak_start).total_seconds() / 3600
-                        if duration >= 48:
+                        if duration >= threshold_hrs:
                             last_obs = observations[-1]
 
                             existing = db.query(FloatingStorage).filter(FloatingStorage.mmsi == mmsi).first()
@@ -83,12 +88,12 @@ async def update_floating_storage_detections():
                     else:
                         stationary_streak_start = None
 
-            today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            today = now.strftime("%Y-%m-%d")
             summary = db.query(FloatingStorageSummary).filter(FloatingStorageSummary.date == today).first()
             if summary:
                 summary.vessel_count = detected_count
                 summary.total_barrels = total_barrels
-                summary.updated_at = datetime.now(timezone.utc)
+                summary.updated_at = now
             else:
                 db.add(FloatingStorageSummary(
                     date=today,

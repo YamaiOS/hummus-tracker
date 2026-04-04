@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 
 from .models import Base, DisruptionEvent
@@ -11,7 +11,19 @@ from .models import Base, DisruptionEvent
 _DB_PATH = Path(__file__).parent.parent / "data" / "hummus.db"
 _DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
-engine = create_engine(f"sqlite:///{_DB_PATH}", echo=False)
+engine = create_engine(
+    f"sqlite:///{_DB_PATH}", 
+    echo=False,
+    connect_args={"check_same_thread": False, "timeout": 30}
+)
+
+@event.listens_for(engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA journal_mode=WAL")
+    cursor.execute("PRAGMA synchronous=NORMAL")
+    cursor.close()
+
 SessionLocal = sessionmaker(bind=engine)
 
 

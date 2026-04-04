@@ -40,14 +40,14 @@ _is_connected: bool = False
 
 def get_live_vessels() -> List[dict]:
     """Return current vessels in the Hormuz area."""
-    now = datetime.now(timezone.utc)
+    now = datetime.utcnow()
     # Only return vessels seen in last 30 minutes
     cutoff = 30 * 60
     active = []
     stale_keys = []
     for mmsi, v in _live_vessels.items():
         try:
-            obs = datetime.fromisoformat(v["observed_at"].replace("Z", "+00:00"))
+            obs = datetime.fromisoformat(v["observed_at"].replace("Z", "+00:00")).replace(tzinfo=None)
             if (now - obs).total_seconds() < cutoff:
                 active.append(v)
             else:
@@ -60,7 +60,8 @@ def get_live_vessels() -> List[dict]:
         if k in _vessel_first_seen:
             del _vessel_first_seen[k]
 
-    return active
+    # Return up to 50 vessels
+    return active[:50]
 
 
 def get_stream_status() -> dict:
@@ -78,7 +79,7 @@ async def _process_message(data: dict) -> None:
     """Process a single AIS message from the stream."""
     global _last_message_time, _total_messages
     _total_messages += 1
-    _last_message_time = datetime.now(timezone.utc)
+    _last_message_time = datetime.utcnow()
 
     msg_type = data.get("MessageType")
     if msg_type != "PositionReport":
@@ -106,13 +107,14 @@ async def _process_message(data: dict) -> None:
     imo = str(meta.get("IMO", "")) if meta.get("IMO") else None
     flag = meta.get("Flag", "").strip() or None
 
-    speed = pos.get("Sog", 0)
+    raw_speed = pos.get("Sog", 0)
+    speed = raw_speed if raw_speed <= 30 else 0  # Cap impossible speeds (AIS data errors)
     course = pos.get("Cog", 0)
     heading = pos.get("TrueHeading")
     nav_status = str(pos.get("NavigationalStatus", ""))
 
     draught = meta.get("Draught", 0) / 10.0 if meta.get("Draught") else None
-    max_draught = None
+    max_draught = meta.get("MaxDraught", 0) / 10.0 if meta.get("MaxDraught") else None
     destination = meta.get("Destination", "").strip() or None
 
     dwt = _estimate_dwt_from_type(vessel_type)
@@ -121,7 +123,7 @@ async def _process_message(data: dict) -> None:
     direction = infer_direction(course, lon)
     crude_grade = _infer_crude_grade(destination, flag) if is_loaded else None
 
-    now = datetime.now(timezone.utc)
+    now = datetime.utcnow()
     if mmsi not in _vessel_first_seen:
         _vessel_first_seen[mmsi] = now
     
@@ -145,12 +147,14 @@ async def _process_message(data: dict) -> None:
         "name": ship_name,
         "vessel_type": vessel_type,
         "vessel_class": vessel_class,
+        "dwt": dwt,
         "lat": lat,
         "lon": lon,
         "speed": speed,
         "course": course,
         "heading": heading,
         "draught": draught,
+        "max_draught": max_draught,
         "destination": destination,
         "is_loaded": is_loaded,
         "estimated_barrels": estimated_barrels,
@@ -187,7 +191,7 @@ async def _process_message(data: dict) -> None:
                 crude_grade=crude_grade,
                 direction=direction,
                 flag=flag,
-                observed_at=datetime.now(timezone.utc),
+                observed_at=datetime.utcnow(),
             )
             db.add(transit)
             db.commit()
@@ -310,13 +314,24 @@ async def run_ais_stream() -> None:
 
 
 async def _run_mock_stream() -> None:
-    """Fallback generator for mock vessel movements using realistic shipping lanes."""
+    """Fallback generator for mock vessel movements using realistic shipping lanes.
+    Includes intentional anomalies (Dark Fleet and STS events) for demonstration.
+    """
     global _is_connected
     
     _is_connected = True
-    mmsis = ["241474000", "311000854", "538008272", "374633000", "232022414", "538010156"]
-    names = ["MARAN GAS APOLLONIA", "SEAWOLF", "FRONT ALTAIR", "KOKUKA COURAGEOUS", "STENA IMPERO", "ADVANTAGE SWEET"]
-    flags = ["Greece", "Marshall Islands", "Norway", "Panama", "United Kingdom", "Marshall Islands"]
+    mmsis = [
+        "241474000", "311000854", "538008272", "374633000", "232022414", "538010156", 
+        "999000111", "999000222", "888000666", "999000333", "999000444", "999000555"
+    ]
+    names = [
+        "SEA VOYAGER", "GLOBAL SPIRIT", "OCEAN AMBASSADOR", "DESERT STAR", "NORTHERN LIGHT", "GULF HORIZON", 
+        "SHADOW_T1", "SHADOW_T2", "GHOST_TANKER", "STORAGE_VLCC", "FUJAIRAH_CONG", "KHOR_FAKKAN_CONG"
+    ]
+    flags = [
+        "Greece", "Marshall Islands", "Norway", "Panama", "United Kingdom", "Marshall Islands", 
+        "Unknown", "Unknown", "Unknown", "Unknown", "Unknown", "Unknown"
+    ]
     
     outbound_path = [[25.2, 55.2], [25.8, 55.8], [26.4, 56.3], [26.7, 56.6], [26.3, 57.2], [25.8, 57.8]]
     inbound_path = [[25.5, 57.8], [26.5, 57.0], [27.1, 56.6], [26.8, 56.2], [26.2, 55.7], [25.0, 54.8]]
@@ -331,38 +346,91 @@ async def _run_mock_stream() -> None:
             "path": outbound_path if is_outbound else inbound_path,
             "progress": random.random(),
             "speed": random.uniform(0.005, 0.015),
-            "dest": random.choice(out_dests if is_outbound else in_dests)
+            "dest": random.choice(out_dests if is_outbound else in_dests),
+            "is_stopped": False,
+            "is_dark": False,
+            "last_emit": 0
         }
+
+    # Setup STS Scenario: SHADOW_T1 and SHADOW_T2 meet near Larak Island
+    vessel_states["999000111"].update({"is_stopped": True, "progress": 0.5, "is_loaded": True, "lat": 26.85, "lon": 56.35})
+    vessel_states["999000222"].update({"is_stopped": True, "progress": 0.5, "is_loaded": False, "lat": 26.852, "lon": 56.352})
+    
+    # Setup Dark Fleet Scenario: GHOST_TANKER will stop emitting after one signal
+    vessel_states["888000666"].update({"is_dark": False, "progress": 0.3})
+
+    # Setup Floating Storage Scenario: STORAGE_VLCC is stationary and loaded
+    vessel_states["999000333"].update({"is_stopped": True, "is_loaded": True, "lat": 25.50, "lon": 56.80, "dest": "FLOATING STORAGE"})
+
+    # Setup Congestion Scenario: Vessels that drift slowly towards terminal from ~0.15 deg away
+    # Fujairah is 25.12, 56.33
+    vessel_states["999000444"].update({
+        "path": [[25.25, 56.45], [25.12, 56.33]],
+        "progress": 0.0,
+        "speed": 0.01,
+        "speed_kt": random.uniform(0.8, 1.5),  # slow drift for congestion detection (<2kt)
+        "is_loaded": False,
+        "dest": "FUJAIRAH ANCHORAGE"
+    })
+    # Khor Fakkan is 25.35, 56.35
+    vessel_states["999000555"].update({
+        "path": [[25.50, 56.50], [25.35, 56.35]],
+        "progress": 0.0,
+        "speed": 0.01,
+        "speed_kt": random.uniform(0.5, 1.2),  # slow drift for congestion detection (<2kt)
+        "is_loaded": False,
+        "dest": "KHOR FAKKAN"
+    })
 
     while True:
         mmsi = random.choice(mmsis)
         idx = mmsis.index(mmsi)
         state = vessel_states[mmsi]
         
-        state["progress"] += state["speed"]
-        if state["progress"] > 1:
-            state["progress"] = 0
+        if state.get("is_dark"):
+            await asyncio.sleep(1)
+            continue
+
+        is_loaded = state.get("is_loaded")
+        if is_loaded is None:
             is_out = (state["path"] == outbound_path)
-            state["dest"] = random.choice(out_dests if is_out else in_dests)
-            
-        path = state["path"]
-        segment_count = len(path) - 1
-        total_p = state["progress"] * segment_count
-        seg_idx = int(total_p)
-        seg_p = total_p - seg_idx
-        
-        if seg_idx >= segment_count:
-            seg_idx = segment_count - 1
-            seg_p = 1.0
-            
-        p1 = path[seg_idx]
-        p2 = path[seg_idx + 1]
-        
-        lat = p1[0] + (p2[0] - p1[0]) * seg_p + random.uniform(-0.02, 0.02)
-        lon = p1[1] + (p2[1] - p1[1]) * seg_p + random.uniform(-0.02, 0.02)
-        
+            is_loaded = is_out and not state.get("is_stopped")
+
+        if not state.get("is_stopped"):
+            state["progress"] += state["speed"]
+            if state["progress"] > 1:
+                state["progress"] = 0
+                is_out = (state["path"] == outbound_path)
+                state["dest"] = random.choice(out_dests if is_out else in_dests)
+
+            path = state["path"]
+            segment_count = len(path) - 1
+            total_p = state["progress"] * segment_count
+            seg_idx = int(total_p)
+            seg_p = total_p - seg_idx
+
+            if seg_idx >= segment_count:
+                seg_idx = segment_count - 1
+                seg_p = 1.0
+
+            p1 = path[seg_idx]
+            p2 = path[seg_idx + 1]
+
+            lat = p1[0] + (p2[0] - p1[0]) * seg_p + random.uniform(-0.01, 0.01)
+            lon = p1[1] + (p2[1] - p1[1]) * seg_p + random.uniform(-0.01, 0.01)
+            # Congestion vessels drift slowly; normal vessels transit at 11-14kt
+            sog = state.get("speed_kt", random.uniform(11, 14))
+        else:
+            lat = state["lat"]
+            lon = state["lon"]
+            sog = state.get("speed_kt", random.uniform(0.1, 0.5))
+
         is_out = (state["path"] == outbound_path)
         course = 45 if is_out else 225
+        
+        # Special logic for Ghost Tanker
+        if mmsi == "888000666":
+            state["is_dark"] = True # Only one signal, then disappears
         
         mock_data = {
             "MessageType": "PositionReport",
@@ -370,7 +438,8 @@ async def _run_mock_stream() -> None:
                 "MMSI": int(mmsi),
                 "ShipName": names[idx],
                 "ShipType": random.choice([84, 71, 80]),
-                "Draught": 155 if is_out else 85,
+                "Draught": 155 if is_loaded else 85,
+                "MaxDraught": 160,
                 "Flag": flags[idx],
                 "Destination": state["dest"]
             },
@@ -378,11 +447,12 @@ async def _run_mock_stream() -> None:
                 "PositionReport": {
                     "Latitude": lat,
                     "Longitude": lon,
-                    "Sog": random.uniform(11, 14),
+                    "Sog": sog,
                     "Cog": course + random.uniform(-5, 5),
                 }
             }
         }
         
         await _process_message(mock_data)
-        await asyncio.sleep(random.uniform(2, 5))
+        await asyncio.sleep(random.uniform(1, 3))
+

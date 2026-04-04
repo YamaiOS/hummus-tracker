@@ -22,7 +22,8 @@ export default function STSEventsPanel() {
     <div className="space-y-0 divide-y divide-petro-border">
       {events.length === 0 ? (
         <div className="py-8 text-center">
-          <p className="text-xs text-text-faint uppercase font-bold tracking-wide">No STS events</p>
+          <p className="text-xs text-text-faint uppercase font-bold tracking-wide">No STS events detected</p>
+          <p className="text-xs text-text-faint mt-1">Proximity scan every 15 min</p>
         </div>
       ) : (
         events.map((e) => (

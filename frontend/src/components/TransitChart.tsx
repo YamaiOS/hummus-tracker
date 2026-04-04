@@ -96,6 +96,11 @@ export default function TransitChart() {
           />
         </AreaChart>
       </ResponsiveContainer>
+      
+      <div className="flex justify-between items-center text-[11px] font-mono text-text-faint px-1 mt-2">
+        <span>SOURCE: IMF PORTWATCH</span>
+        <span>SATELLITE AIS AGGREGATE</span>
+      </div>
     </div>
   )
 }

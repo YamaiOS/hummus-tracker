@@ -58,6 +58,15 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-petro-bg text-text-warm font-sans">
+      {/* Data limitations banner */}
+      <div className="bg-petro-card border-b border-petro-border">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-1.5 flex items-center gap-2">
+          <span className="text-[11px] text-text-faint font-mono">
+            <span className="text-text-muted font-bold uppercase">R&D PREVIEW</span>
+            {' '}— AIS coverage via free-tier aisstream.io (limited vessel visibility). Prices: FRED spot (T-1 to T-5 lag) + yfinance futures. Flow baselines: EIA static reference. IMF PortWatch: T-6 satellite aggregate. Not for live trading decisions.
+          </span>
+        </div>
+      </div>
       {/* Header — Solid deep petroleum, no blur */}
       <header className="border-b border-petro-border bg-petro-bg sticky top-0 z-50">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
@@ -69,19 +78,40 @@ export default function Dashboard() {
           </div>
           
           <div className="flex items-center gap-4 sm:gap-6">
-            {prices?.brent && (
-              <div className="hidden sm:flex flex-col items-end leading-none border-r border-petro-border pr-4 sm:pr-6">
-                <div className="flex gap-2 text-sm font-mono">
-                  <span className="text-text-muted font-bold">DCOILBRENTEU</span>
-                  <span className="text-petro-teal">${prices.brent.toFixed(2)}</span>
-                </div>
-                <span className="text-[11px] text-text-faint mt-0.5">Brent - Europe (FRED)</span>
+            {/* Desktop: both prices */}
+            {(prices?.brent_futures || prices?.brent) && (
+              <div className="hidden sm:flex items-center gap-4 border-r border-petro-border pr-4 sm:pr-6">
+                {prices?.brent_futures && (
+                  <div className="flex flex-col items-end leading-none">
+                    <div className="flex gap-2 text-sm font-mono">
+                      <span className="text-text-muted font-bold">BZ=F</span>
+                      <span className="text-petro-teal">${prices.brent_futures.toFixed(2)}</span>
+                    </div>
+                    <span className="text-[11px] uppercase font-bold mt-0.5 text-text-faint">
+                      ICE Futures M1
+                    </span>
+                  </div>
+                )}
+                {prices?.brent && (
+                  <div className="flex flex-col items-end leading-none border-l border-petro-border pl-4">
+                    <div className="flex gap-2 text-sm font-mono">
+                      <span className="text-text-muted font-bold">DCOILBRENTEU</span>
+                      <span className={prices.is_stale ? 'text-petro-gold' : 'text-petro-teal'}>${prices.brent.toFixed(2)}</span>
+                    </div>
+                    <span className={`text-[11px] uppercase font-bold mt-0.5 ${prices.is_stale ? 'text-petro-gold' : 'text-text-faint'}`}>
+                      {prices.brent_date} • FRED Spot
+                    </span>
+                  </div>
+                )}
               </div>
             )}
-            {prices?.brent && (
-              <div className="sm:hidden flex items-center gap-1.5 font-mono text-sm border-r border-petro-border pr-4">
+            {/* Mobile: compact */}
+            {(prices?.brent_futures || prices?.brent) && (
+              <div className="sm:hidden flex items-center gap-2 font-mono text-sm border-r border-petro-border pr-4">
                 <span className="text-text-muted font-bold">BRT</span>
-                <span className="text-petro-teal">${prices.brent.toFixed(2)}</span>
+                <span className="text-petro-teal font-bold">
+                  ${(prices.brent_futures ?? prices.brent)?.toFixed(2)}
+                </span>
               </div>
             )}
 
@@ -95,6 +125,27 @@ export default function Dashboard() {
         </div>
       </header>
 
+      {stream?.mode === 'mock' && (
+        <div className="bg-petro-red/10 border-b border-petro-red/30">
+          <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-2 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-petro-red shrink-0" />
+            <p className="text-xs font-bold text-petro-red uppercase tracking-wide">
+              SIMULATED MODE — Vessel positions, dark fleet, STS, floating storage, flow estimates & OPEC compliance are derived from mock AIS data
+            </p>
+          </div>
+        </div>
+      )}
+      {stream?.mode === 'live' && (strait?.tankers_active ?? 0) < 5 && !isLoading && (
+        <div className="bg-petro-gold/10 border-b border-petro-gold/30">
+          <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-2 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-petro-gold shrink-0" />
+            <p className="text-xs font-bold text-petro-gold uppercase tracking-wide">
+              LIMITED AIS COVERAGE — {strait?.tankers_active ?? 0} tankers tracked vs ~50 expected. Vessel-derived analytics may be incomplete.
+            </p>
+          </div>
+        </div>
+      )}
+
       <StraitStatusBanner />
 
       <main className="max-w-[1600px] mx-auto px-4 sm:px-6 py-6 space-y-4">
@@ -104,8 +155,20 @@ export default function Dashboard() {
           <KPICard label="Active Tankers" value={strait?.tankers_active ?? 0} loading={isLoading} />
           <KPICard label="Loaded (Out)" value={strait?.loaded_tankers ?? 0} loading={isLoading} />
           <KPICard label="Ballast (In)" value={strait?.ballast_tankers ?? 0} loading={isLoading} />
-          <KPICard label="Flow (mbpd)" value={baseline?.eia_baseline_mbpd ?? 20.0} loading={isLoading} suffix=" mbpd" />
-          <KPICard label="DWT Throughput" value={strait?.total_dwt_outbound ? (strait.total_dwt_outbound / 1_000_000).toFixed(2) : 0} loading={isLoading} suffix="M" />
+          <KPICard 
+            label="Flow (mbpd)" 
+            value={baseline?.eia_baseline_mbpd ?? 20.0} 
+            loading={isLoading} 
+            suffix=" mbpd" 
+            simulated={stream?.mode === 'mock'}
+          />
+          <KPICard 
+            label="DWT Throughput" 
+            value={strait?.total_dwt_outbound ? (strait.total_dwt_outbound / 1_000_000).toFixed(2) : 0} 
+            loading={isLoading} 
+            suffix="M" 
+            simulated={stream?.mode === 'mock'}
+          />
           <KPICard label="I/O Ratio" value={strait?.inbound_outbound_ratio?.toFixed(2) ?? '1.00'} loading={isLoading} />
         </div>
 
@@ -136,7 +199,11 @@ export default function Dashboard() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div className="lg:col-span-2">
-                <Panel title="Live Vessel Map" subtitle="Real-time AIS positions & maritime lanes">
+                <Panel 
+                  title="Live Vessel Map" 
+                  subtitle="Real-time AIS positions & maritime lanes"
+                  footer="SOURCE: AISSTREAM.IO"
+                >
                   <VesselMap />
                 </Panel>
               </div>
@@ -151,7 +218,7 @@ export default function Dashboard() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Panel title="AIS Dark Vessels" subtitle={`${data?.strait_status?.loaded_tankers || 0} active`}>
+              <Panel title="AIS Dark Vessels" subtitle={`${data?.strait_status?.dark_vessel_count || 0} active detections`}>
                 <DarkVesselPanel />
               </Panel>
               <Panel title="STS Transfer Alerts" subtitle="Suspicious tanker proximity">
@@ -176,7 +243,11 @@ export default function Dashboard() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div className="lg:col-span-2">
-                <Panel title="Brent-Dubai Spread" subtitle="90-day EFS history & market structure">
+                <Panel 
+                  title="Brent-Dubai Spread" 
+                  subtitle="90-day EFS history & market structure"
+                  footer="SOURCE: YFINANCE BZ=F"
+                >
                   <MarketMetricsPanel />
                 </Panel>
               </div>
@@ -193,7 +264,11 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <Panel title="Brent Crude" subtitle="Daily settlement history (FRED)">
+              <Panel 
+                title="Brent Crude" 
+                subtitle="Daily settlement history (FRED)"
+                footer="SOURCE: FRED SPOT"
+              >
                 <PriceChart />
               </Panel>
               <Panel title="Bunker Market" subtitle="Fujairah VLSFO & HSFO rates">
@@ -219,7 +294,11 @@ export default function Dashboard() {
                 <Panel title="Volume by Flag" subtitle="Selective transit intelligence">
                   <VolumeByFlag />
                 </Panel>
-                <Panel title="Daily Flow Trend" subtitle="30-day observed mbpd vs EIA baseline">
+                <Panel 
+                  title="Daily Flow Trend" 
+                  subtitle="30-day observed mbpd vs EIA baseline"
+                  footer="SOURCE: EIA BASELINE CROSS-REF"
+                >
                   <DailyFlowTrend />
                 </Panel>
                 <Panel title="Vessel Class Mix" subtitle="Active tanker fleet composition">
@@ -273,15 +352,21 @@ function TabButton({
 }
 
 function KPICard({
-  label, value, loading, suffix = '',
+  label, value, loading, suffix = '', simulated = false
 }: {
   label: string
   value: number | string
   loading: boolean
   suffix?: string
+  simulated?: boolean
 }) {
   return (
-    <div className="bg-petro-card border border-petro-border rounded-lg px-4 py-4">
+    <div className="bg-petro-card border border-petro-border rounded-lg px-4 py-4 relative">
+      {simulated && (
+        <span className="absolute top-2 right-2 bg-petro-gold/20 text-petro-gold text-[11px] font-bold px-1 rounded border border-petro-gold/30 uppercase">
+          SIM
+        </span>
+      )}
       <p className="text-xs font-bold text-text-muted uppercase tracking-wide mb-1">
         {label}
       </p>
@@ -300,11 +385,12 @@ function KPICard({
 }
 
 function Panel({
-  title, subtitle, children,
+  title, subtitle, children, footer
 }: {
   title: string
   subtitle?: string
   children: React.ReactNode
+  footer?: string
 }) {
   return (
     <div className="bg-petro-card border border-petro-border rounded-lg overflow-hidden shadow-none flex flex-col h-full">
@@ -321,6 +407,11 @@ function Panel({
       <div className="p-4 flex-grow">
         {children}
       </div>
+      {footer && (
+        <div className="px-4 py-2 border-t border-petro-border bg-petro-bg/30 text-[11px] font-mono text-text-faint uppercase">
+          {footer}
+        </div>
+      )}
     </div>
   )
 }
