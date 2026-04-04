@@ -70,6 +70,8 @@ export interface OverviewResponse {
     ballast_tankers: number
     total_dwt_outbound: number
     inbound_outbound_ratio: number
+    source?: string
+    cached_date?: string
   }
   oil_flow: {
     eia_baseline_mbpd: number
