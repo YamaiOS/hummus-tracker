@@ -48,7 +48,7 @@ async def fetch_oil_prices(
 
 
 async def get_latest_prices() -> Dict[str, Optional[float]]:
-    """Get most recent Brent and WTI prices."""
+    """Get most recent Brent and WTI prices from FRED."""
     prices = await fetch_oil_prices(days=14)
     if not prices:
         return {"brent": None, "wti": None}

@@ -71,15 +71,12 @@ export default function Dashboard() {
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-4 border-r border-petro-border pr-6">
               {prices?.brent && (
-                <div className="flex gap-2 text-sm font-mono leading-none">
-                  <span className="text-text-muted font-bold">BRENT</span>
-                  <span className="text-petro-teal">${prices.brent.toFixed(2)}</span>
-                </div>
-              )}
-              {prices?.wti && (
-                <div className="flex gap-2 text-sm font-mono leading-none">
-                  <span className="text-text-muted font-bold">WTI</span>
-                  <span className="text-petro-teal">${prices.wti.toFixed(2)}</span>
+                <div className="flex flex-col items-end leading-none">
+                  <div className="flex gap-2 text-sm font-mono">
+                    <span className="text-text-muted font-bold">DCOILBRENTEU</span>
+                    <span className="text-petro-teal">${prices.brent.toFixed(2)}</span>
+                  </div>
+                  <span className="text-[11px] text-text-faint mt-0.5">Crude Oil Prices: Brent - Europe (FRED)</span>
                 </div>
               )}
             </div>
