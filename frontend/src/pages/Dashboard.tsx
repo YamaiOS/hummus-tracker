@@ -15,12 +15,12 @@ import DarkVesselPanel from '../components/DarkVesselPanel'
 import STSEventsPanel from '../components/STSEventsPanel'
 import FujairahInventoryPanel from '../components/FujairahInventoryPanel'
 import OPECCompliancePanel from '../components/OPECCompliancePanel'
-import PortCongestionPanel from '../components/PortCongestionPanel'
 import StraitStatusBanner from '../components/StraitStatusBanner'
 import ActivityFeed from '../components/ActivityFeed'
 import IntelligenceBriefPanel from '../components/IntelligenceBriefPanel'
-import CrudeMixPanel from '../components/CrudeMixPanel'
-import TonMilePanel from '../components/TonMilePanel'
+import TopDestinations from '../components/TopDestinations'
+import DailyFlowTrend from '../components/DailyFlowTrend'
+import VesselClassBreakdown from '../components/VesselClassBreakdown'
 import BunkerPricesPanel from '../components/BunkerPricesPanel'
 import WeatherAlertsPanel from '../components/WeatherAlertsPanel'
 import { fetchOverview } from '../api/client'
@@ -186,8 +186,8 @@ export default function Dashboard() {
                 <Panel title="OPEC+ Compliance" subtitle="Quota vs observed exports (7-day)">
                   <OPECCompliancePanel />
                 </Panel>
-                <Panel title="Inferred Crude Mix" subtitle="Grade distribution by loading port">
-                  <CrudeMixPanel />
+                <Panel title="Top Destinations" subtitle="Outbound cargo flow by region">
+                  <TopDestinations />
                 </Panel>
               </div>
             </div>
@@ -218,11 +218,11 @@ export default function Dashboard() {
                 <Panel title="Volume by Flag" subtitle="Selective transit intelligence">
                   <VolumeByFlag />
                 </Panel>
-                <Panel title="Ton-Mile Index" subtitle="Shipping demand & freight pressure">
-                  <TonMilePanel />
+                <Panel title="Daily Flow Trend" subtitle="30-day observed mbpd vs EIA baseline">
+                  <DailyFlowTrend />
                 </Panel>
-                <Panel title="Terminal Waiting Times" subtitle="Avg hours from BBox entry to arrival">
-                  <PortCongestionPanel />
+                <Panel title="Vessel Class Mix" subtitle="Active tanker fleet composition">
+                  <VesselClassBreakdown />
                 </Panel>
               </div>
             </div>

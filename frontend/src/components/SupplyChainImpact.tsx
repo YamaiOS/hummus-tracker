@@ -81,13 +81,6 @@ export default function SupplyChainImpact() {
         </div>
       </div>
 
-      {/* Daily Economic Friction */}
-      <div className="pt-4 border-t border-petro-border">
-        <p className="text-xs text-text-muted uppercase font-bold mb-1">Daily Global Friction Loss</p>
-        <p className="text-2xl font-mono font-bold text-text-warm">
-          ${(data?.global_economic_loss_est_usd_day ? data.global_economic_loss_est_usd_day / 1_000_000_000 : 0).toFixed(2)}B
-        </p>
-      </div>
     </div>
   )
 }
