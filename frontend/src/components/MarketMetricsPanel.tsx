@@ -90,7 +90,7 @@ export default function MarketMetricsPanel() {
           <p className="text-[11px] font-bold text-text-faint uppercase tracking-wide px-1">90-Day EFS Time-Series</p>
           <div className="h-32 w-full bg-petro-bg rounded-md p-2 border border-petro-border">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={historyData.history} margin={{ top: 5, right: 5, left: -30, bottom: 0 }}>
+              <AreaChart data={historyData!.history} margin={{ top: 5, right: 5, left: -30, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorEfs" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#00a19c" stopOpacity={0.2}/>

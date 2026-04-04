@@ -68,22 +68,26 @@ export default function Dashboard() {
             <p className="text-sm text-text-faint font-medium">Strait of Hormuz Intelligence</p>
           </div>
           
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-4 border-r border-petro-border pr-6">
-              {prices?.brent && (
-                <div className="flex flex-col items-end leading-none">
-                  <div className="flex gap-2 text-sm font-mono">
-                    <span className="text-text-muted font-bold">DCOILBRENTEU</span>
-                    <span className="text-petro-teal">${prices.brent.toFixed(2)}</span>
-                  </div>
-                  <span className="text-[11px] text-text-faint mt-0.5">Crude Oil Prices: Brent - Europe (FRED)</span>
+          <div className="flex items-center gap-4 sm:gap-6">
+            {prices?.brent && (
+              <div className="hidden sm:flex flex-col items-end leading-none border-r border-petro-border pr-4 sm:pr-6">
+                <div className="flex gap-2 text-sm font-mono">
+                  <span className="text-text-muted font-bold">DCOILBRENTEU</span>
+                  <span className="text-petro-teal">${prices.brent.toFixed(2)}</span>
                 </div>
-              )}
-            </div>
-            
+                <span className="text-[11px] text-text-faint mt-0.5">Brent - Europe (FRED)</span>
+              </div>
+            )}
+            {prices?.brent && (
+              <div className="sm:hidden flex items-center gap-1.5 font-mono text-sm border-r border-petro-border pr-4">
+                <span className="text-text-muted font-bold">BRT</span>
+                <span className="text-petro-teal">${prices.brent.toFixed(2)}</span>
+              </div>
+            )}
+
             <div className="flex items-center gap-2">
               <span className={`w-1.5 h-1.5 rounded-full ${getStatusColor()}`} />
-              <span className="text-xs font-bold text-text-muted uppercase tracking-wide">
+              <span className="text-xs font-bold text-text-muted uppercase tracking-wide hidden sm:inline">
                 {getStatusLabel()}
               </span>
             </div>

@@ -26,17 +26,15 @@ export default function IntelligenceBriefPanel() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between px-1">
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] font-bold text-text-faint uppercase tracking-wide">DATE: {brief.date}</span>
-        </div>
+      <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+        <span className="text-[11px] font-bold text-text-faint uppercase tracking-wide">DATE: {brief.date}</span>
         <button className="text-[11px] font-bold text-petro-teal hover:text-text-warm transition-colors uppercase tracking-tight">
           EXPORT RAW (TXT)
         </button>
       </div>
 
-      <div className="p-5 bg-petro-bg border border-petro-border rounded shadow-none">
-        <div className="whitespace-pre-wrap font-mono text-[13px] text-text-warm leading-relaxed">
+      <div className="p-4 bg-petro-bg border border-petro-border rounded overflow-x-auto">
+        <div className="whitespace-pre-wrap font-mono text-xs sm:text-[13px] text-text-warm leading-relaxed break-words max-w-full">
           {brief.content_markdown}
         </div>
       </div>

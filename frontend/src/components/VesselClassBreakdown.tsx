@@ -61,15 +61,13 @@ export default function VesselClassBreakdown() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 overflow-hidden">
       {sorted.map((item) => (
-        <div key={item.cls} className="space-y-1.5">
-          <div className="flex justify-between items-end">
-            <span className="text-xs font-bold text-text-warm uppercase tracking-wide">{item.cls}</span>
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-text-muted font-mono">
-                {item.loaded} loaded
-              </span>
+        <div key={item.cls} className="space-y-1.5 min-w-0">
+          <div className="flex justify-between items-baseline gap-2 min-w-0">
+            <span className="text-xs font-bold text-text-warm uppercase tracking-wide shrink-0">{item.cls}</span>
+            <div className="flex items-baseline gap-2 shrink-0">
+              <span className="text-xs text-text-muted font-mono">{item.loaded} ldd</span>
               <span className="text-sm font-mono font-bold text-text-warm">{item.total}</span>
             </div>
           </div>
@@ -80,7 +78,7 @@ export default function VesselClassBreakdown() {
             />
           </div>
           {item.barrels > 0 && (
-            <p className="text-xs text-text-faint font-mono">
+            <p className="text-xs text-text-faint font-mono truncate">
               {(item.barrels / 1_000_000).toFixed(2)}M bbl outbound
             </p>
           )}

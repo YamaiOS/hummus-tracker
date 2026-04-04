@@ -32,14 +32,10 @@ export default function DisruptionTimeline() {
   }
 
   return (
-    <div className="relative">
-      <div className="absolute left-[18px] top-3 bottom-3 w-px bg-petro-border" />
-
-      <div className="space-y-3">
-        {events.map((evt, i) => (
-          <EventCard key={i} event={evt} />
-        ))}
-      </div>
+    <div className="space-y-0 divide-y divide-petro-border max-h-[500px] overflow-y-auto custom-scrollbar">
+      {events.map((evt, i) => (
+        <EventCard key={i} event={evt} />
+      ))}
     </div>
   )
 }
@@ -48,32 +44,29 @@ function EventCard({ event }: { event: DisruptionEvent }) {
   const style = severityColors[event.severity] || severityColors.low
 
   return (
-    <div className="flex gap-3 relative">
-      <div className="flex-shrink-0 w-9 flex justify-center pt-3 z-10">
-        <div className={`w-3 h-3 rounded-full ${style.dot}`} />
-      </div>
-
-      <div className="flex-1 border-b border-petro-border pb-3">
-        <div className="flex items-start justify-between gap-2 mb-1">
-          <h3 className="text-sm font-semibold text-text-warm">{event.title}</h3>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {event.category && (
-              <span className="text-xs text-text-faint uppercase font-bold">{event.category}</span>
-            )}
+    <div className="py-3 px-1 hover:bg-petro-card-hover transition-colors">
+      <div className="flex items-start gap-2 mb-1 min-w-0">
+        <div className={`w-2 h-2 rounded-full shrink-0 mt-1 ${style.dot}`} />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <h3 className="text-sm font-semibold text-text-warm break-words">{event.title}</h3>
             <span className={`text-xs font-bold uppercase ${style.text}`}>{event.severity}</span>
             <span className="text-xs text-text-faint font-mono">{formatDate(event.date)}</span>
+            {event.category && (
+              <span className="text-xs text-text-faint uppercase">{event.category}</span>
+            )}
           </div>
-        </div>
-        <p className="text-xs text-text-muted leading-relaxed">{event.description}</p>
-        <div className="flex items-center gap-3 mt-2">
-          {event.brent_impact_pct !== 0 && (
-            <span className={`text-xs font-mono font-bold ${event.brent_impact_pct > 0 ? 'text-petro-red' : 'text-petro-green'}`}>
-              Brent: {event.brent_impact_pct > 0 ? '+' : ''}{event.brent_impact_pct.toFixed(1)}%
-            </span>
-          )}
-          {event.source && (
-            <span className="text-xs text-text-faint">Source: {event.source}</span>
-          )}
+          <p className="text-xs text-text-muted leading-relaxed mt-1 break-words">{event.description}</p>
+          <div className="flex flex-wrap items-center gap-3 mt-1.5">
+            {event.brent_impact_pct !== 0 && (
+              <span className={`text-xs font-mono font-bold ${event.brent_impact_pct > 0 ? 'text-petro-red' : 'text-petro-green'}`}>
+                Brent: {event.brent_impact_pct > 0 ? '+' : ''}{event.brent_impact_pct.toFixed(1)}%
+              </span>
+            )}
+            {event.source && (
+              <span className="text-xs text-text-faint">Source: {event.source}</span>
+            )}
+          </div>
         </div>
       </div>
     </div>
