@@ -30,9 +30,9 @@ export default function BunkerPricesPanel() {
   }))
 
   return (
-    <div className="space-y-4 flex flex-col h-full">
+    <div className="space-y-3">
       {latest && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
           <div className="p-2 bg-petro-bg border border-petro-border rounded text-center relative overflow-hidden">
             <div className="absolute top-0 left-0 bg-petro-teal w-1 h-full" />
             <p className="text-[11px] text-text-muted uppercase font-bold mb-1">VLSFO 0.5%</p>
@@ -51,7 +51,7 @@ export default function BunkerPricesPanel() {
         </div>
       )}
 
-      <div className="flex-grow min-h-[180px] w-full bg-petro-bg rounded-md p-2 border border-petro-border">
+      <div className="h-[200px] w-full bg-petro-bg rounded-md p-2 border border-petro-border">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1c2e4a" vertical={false} />

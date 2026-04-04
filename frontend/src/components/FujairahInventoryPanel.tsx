@@ -27,7 +27,7 @@ export default function FujairahInventoryPanel() {
   const latest = history?.[0]
 
   return (
-    <div className="space-y-4 flex flex-col h-full">
+    <div className="space-y-3">
       {latest && (
         <div className="grid grid-cols-3 gap-2">
           <div className="p-2 bg-petro-bg border border-petro-border rounded text-center">
@@ -45,35 +45,36 @@ export default function FujairahInventoryPanel() {
         </div>
       )}
 
-      <div className="flex-grow min-h-[180px] w-full bg-petro-bg rounded-md p-2 border border-petro-border">
+      {/* Explicit height — Safari does not resolve height:100% inside flex-grow parents */}
+      <div className="h-[200px] w-full bg-petro-bg rounded-md p-2 border border-petro-border">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1c2e4a" vertical={false} />
-            <XAxis 
-              dataKey="date" 
-              stroke="#566b8a" 
-              fontSize={10} 
-              tickLine={false} 
-              axisLine={false} 
-            />
-            <YAxis 
-              stroke="#566b8a" 
-              fontSize={10} 
-              tickLine={false} 
+            <XAxis
+              dataKey="date"
+              stroke="#566b8a"
+              fontSize={10}
+              tickLine={false}
               axisLine={false}
             />
-            <Tooltip 
+            <YAxis
+              stroke="#566b8a"
+              fontSize={10}
+              tickLine={false}
+              axisLine={false}
+            />
+            <Tooltip
               contentStyle={{ backgroundColor: '#0f1d32', border: '1px solid #1c2e4a', fontSize: '11px', borderRadius: '4px' }}
               itemStyle={{ fontSize: '11px' }}
             />
-            <Legend iconType="circle" verticalAlign="top" align="right" wrapperStyle={{ fontSize: '10px', paddingBottom: '10px' }} />
+            <Legend iconType="circle" verticalAlign="top" align="right" wrapperStyle={{ fontSize: '11px', paddingBottom: '8px' }} />
             <Bar dataKey="light" name="LIGHT" stackId="a" fill="#00a19c" />
             <Bar dataKey="middle" name="MIDDLE" stackId="a" fill="#c4a35a" />
             <Bar dataKey="heavy" name="HEAVY" stackId="a" fill="#8b9bb4" />
           </BarChart>
         </ResponsiveContainer>
       </div>
-      
+
       <div className="flex justify-between items-center text-[11px] font-mono text-text-faint px-1">
         <span>SOURCE: FOIZ WEEKLY</span>
         <span>LATEST: {latest?.date}</span>

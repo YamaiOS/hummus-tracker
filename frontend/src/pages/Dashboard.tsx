@@ -63,7 +63,7 @@ export default function Dashboard() {
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-1.5 flex items-center gap-2">
           <span className="text-[11px] text-text-faint font-mono">
             <span className="text-text-muted font-bold uppercase">R&D PREVIEW</span>
-            {' '}— AIS coverage via free-tier aisstream.io (limited vessel visibility). Prices: FRED spot (T-1 to T-5 lag) + yfinance futures. Flow baselines: EIA static reference. IMF PortWatch: T-6 satellite aggregate. Not for live trading decisions.
+            {' '}— Data streaming may take up to 15s to initialize. Enterprise configuration recommended for live trading decisions.
           </span>
         </div>
       </div>
