@@ -39,6 +39,7 @@ class VesselTransit(Base):
     cargo_type = Column(Integer, nullable=True)
     is_loaded = Column(Boolean, nullable=True)     # inferred from draught ratio
     estimated_barrels = Column(Float, nullable=True)
+    crude_grade = Column(String, nullable=True)    # inferred from loading port (e.g., Arab Light)
     direction = Column(String, nullable=True)      # "inbound" (entering Gulf) or "outbound" (leaving Gulf)
     flag = Column(String, nullable=True)           # ISO country code or name
     observed_at = Column(DateTime, default=datetime.utcnow, index=True)
@@ -61,8 +62,164 @@ class DailyTransitSummary(Base):
     ballast_count = Column(Integer, default=0)
     estimated_barrels = Column(Float, default=0.0)
     estimated_mbpd = Column(Float, default=0.0)  # million barrels per day
+    total_dwt_outbound = Column(Float, default=0.0) # Total tonnage leaving Gulf
+    ton_mile_index = Column(Float, default=0.0)    # barrels * distance
     brent_price = Column(Float, nullable=True)
     wti_price = Column(Float, nullable=True)
+    dubai_price = Column(Float, nullable=True)
+    brent_dubai_spread = Column(Float, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+
+class MarketData(Base):
+    """Detailed daily market indicators (spreads, curves)."""
+    __tablename__ = "market_data"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    date = Column(String, unique=True, index=True)  # YYYY-MM-DD
+    brent_m1 = Column(Float)
+    brent_m2 = Column(Float)
+    brent_m6 = Column(Float)
+    dubai_m1 = Column(Float)
+    dubai_m2 = Column(Float)
+    dubai_m6 = Column(Float)
+    brent_dubai_efs = Column(Float)  # Brent M1 - Dubai M1
+    brent_m1_m2 = Column(Float)      # Brent Time Spread 1-2
+    brent_m1_m6 = Column(Float)      # Brent Time Spread 1-6
+    dubai_m1_m2 = Column(Float)      # Dubai Time Spread 1-2
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+
+class FloatingStorage(Base):
+    """Vessels identified as floating storage (stationary + loaded)."""
+    __tablename__ = "floating_storage"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    mmsi = Column(String, index=True)
+    vessel_name = Column(String)
+    vessel_class = Column(String)
+    latitude = Column(Float)
+    longitude = Column(Float)
+    duration_hrs = Column(Float)
+    estimated_barrels = Column(Float)
+    last_observed_at = Column(DateTime)
+    is_active = Column(Boolean, default=True)
+
+
+class FloatingStorageSummary(Base):
+    """Daily aggregated floating storage metrics."""
+    __tablename__ = "floating_storage_summary"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    date = Column(String, unique=True, index=True)  # YYYY-MM-DD
+    vessel_count = Column(Integer)
+    total_barrels = Column(Float)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+
+class DarkVessel(Base):
+    """Vessels that have disappeared from AIS mid-transit (gone dark)."""
+    __tablename__ = "dark_vessels"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    mmsi = Column(String, index=True)
+    vessel_name = Column(String)
+    vessel_class = Column(String)
+    last_lat = Column(Float)
+    last_lon = Column(Float)
+    last_speed = Column(Float)
+    last_course = Column(Float)
+    is_loaded = Column(Boolean)
+    last_observed_at = Column(DateTime)
+    detected_at = Column(DateTime, default=datetime.utcnow)
+    is_active = Column(Boolean, default=True)
+    resolved_at = Column(DateTime, nullable=True)
+
+
+class STSEvent(Base):
+    """Potential Ship-to-Ship (STS) transfer events."""
+    __tablename__ = "sts_events"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    vessel_a_mmsi = Column(String, index=True)
+    vessel_a_name = Column(String)
+    vessel_b_mmsi = Column(String, index=True)
+    vessel_b_name = Column(String)
+    latitude = Column(Float)
+    longitude = Column(Float)
+    distance_m = Column(Float)
+    detected_at = Column(DateTime, default=datetime.utcnow)
+    is_active = Column(Boolean, default=True)
+    resolved_at = Column(DateTime, nullable=True)
+
+
+class FujairahInventory(Base):
+    """Weekly Fujairah oil inventory data (FEDCom/S&P Global)."""
+    __tablename__ = "fujairah_inventory"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    date = Column(String, unique=True, index=True)  # YYYY-MM-DD (typically a Monday or Wednesday)
+    light_distillates = Column(Float)
+    middle_distillates = Column(Float)
+    heavy_distillates_residues = Column(Float)
+    total_inventory = Column(Float)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+
+class OPECQuota(Base):
+    """OPEC+ production quotas for key exporters."""
+    __tablename__ = "opec_quotas"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    country = Column(String, unique=True, index=True)
+    quota_mbpd = Column(Float)
+    is_exempt = Column(Boolean, default=False)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+
+class PortCongestion(Base):
+    """Wait times and congestion metrics for major terminals."""
+    __tablename__ = "port_congestion"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    terminal_name = Column(String, index=True)
+    avg_wait_hrs = Column(Float)
+    vessel_count = Column(Integer)
+    date = Column(String, index=True)  # YYYY-MM-DD
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+
+class ActivityEvent(Base):
+    """Timestamped intelligence events for the activity feed."""
+    __tablename__ = "activity_events"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    timestamp = Column(DateTime, default=datetime.utcnow, index=True)
+    event_type = Column(String, index=True) # e.g., "dark_vessel", "sts_event", "flow_threshold"
+    severity = Column(String) # "info", "warning", "critical"
+    message = Column(String)
+    metadata_json = Column(String, nullable=True)
+
+
+class IntelligenceBrief(Base):
+    """Daily auto-generated intelligence summaries."""
+    __tablename__ = "intelligence_briefs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    date = Column(String, unique=True, index=True) # YYYY-MM-DD
+    content_markdown = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class InsuranceMarket(Base):
+    """War risk insurance premiums and JWC status."""
+    __tablename__ = "insurance_market"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    jwc_status = Column(String) # e.g., "JWLA-033"
+    is_listed_area = Column(Boolean, default=True)
+    premium_bps = Column(Float) # Basis points (100 bps = 1%)
+    baseline_bps = Column(Float, default=15.0)
     updated_at = Column(DateTime, default=datetime.utcnow)
 
 
@@ -80,6 +237,33 @@ class DisruptionEvent(Base):
     longitude = Column(Float, nullable=True)
     brent_impact_pct = Column(Float, nullable=True)  # price move in %
     source = Column(String, nullable=True)
+
+
+class BunkerPrice(Base):
+    """Fujairah bunker fuel prices (VLSFO, HSFO)."""
+    __tablename__ = "bunker_prices"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    date = Column(String, index=True) # YYYY-MM-DD
+    vlsfo_price = Column(Float)
+    hsfo_price = Column(Float)
+    spread = Column(Float) # VLSFO - HSFO (Hi-5 spread)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+
+class TerminalWeather(Base):
+    """Real-time weather data at key terminals (Shamal wind detection)."""
+    __tablename__ = "terminal_weather"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    terminal_name = Column(String, index=True)
+    latitude = Column(Float)
+    longitude = Column(Float)
+    wind_speed_knots = Column(Float)
+    wind_gusts_knots = Column(Float)
+    wave_height_m = Column(Float, nullable=True)
+    is_alert_active = Column(Boolean, default=False)
+    updated_at = Column(DateTime, default=datetime.utcnow)
 
 
 # ── Pydantic schemas ─────────────────────────────────────────────────────────
@@ -107,6 +291,7 @@ class VesselPosition(BaseModel):
     destination: Optional[str] = None
     is_loaded: Optional[bool] = None
     estimated_barrels: Optional[float] = None
+    crude_grade: Optional[str] = None
     direction: Optional[str] = None
     flag: Optional[str] = None
     observed_at: str
@@ -140,8 +325,121 @@ class PriceCorrelation(BaseModel):
     date: str
     brent: Optional[float] = None
     wti: Optional[float] = None
+    dubai: Optional[float] = None
+    brent_dubai_spread: Optional[float] = None
     transit_count: int = 0
     estimated_mbpd: float = 0.0
+
+
+class MarketMetrics(BaseModel):
+    date: str
+    brent_m1: float
+    brent_m2: float
+    brent_m6: float
+    dubai_m1: float
+    dubai_m2: float
+    dubai_m6: float
+    brent_dubai_efs: float
+    brent_m1_m2: float
+    brent_m1_m6: float
+    dubai_m1_m2: float
+
+
+class FloatingStorageSchema(BaseModel):
+    mmsi: str
+    vessel_name: Optional[str] = None
+    vessel_class: Optional[str] = None
+    latitude: float
+    longitude: float
+    duration_hrs: float
+    estimated_barrels: float
+    last_observed_at: str
+    is_active: bool
+
+
+class FloatingStorageSummarySchema(BaseModel):
+    date: str
+    vessel_count: int
+    total_barrels: float
+
+
+class DarkVesselSchema(BaseModel):
+    mmsi: str
+    vessel_name: Optional[str] = None
+    vessel_class: Optional[str] = None
+    last_lat: float
+    last_lon: float
+    last_speed: Optional[float] = None
+    last_course: Optional[float] = None
+    is_loaded: bool
+    last_observed_at: str
+    detected_at: str
+    is_active: bool
+
+
+class STSEventSchema(BaseModel):
+    vessel_a_mmsi: str
+    vessel_a_name: Optional[str] = None
+    vessel_b_mmsi: str
+    vessel_b_name: Optional[str] = None
+    latitude: float
+    longitude: float
+    distance_m: float
+    detected_at: str
+    is_active: bool
+
+
+class FujairahInventorySchema(BaseModel):
+    date: str
+    light_distillates: float
+    middle_distillates: float
+    heavy_distillates_residues: float
+    total_inventory: float
+
+
+class OPECQuotaSchema(BaseModel):
+    country: str
+    quota_mbpd: float
+    is_exempt: bool
+
+
+class ComplianceRecord(BaseModel):
+    country: str
+    quota_mbpd: float
+    observed_mbpd: float
+    delta: float
+    compliance_pct: float
+    is_exempt: bool
+
+
+class PortCongestionSchema(BaseModel):
+    terminal_name: str
+    avg_wait_hrs: float
+    vessel_count: int
+    date: str
+
+
+class ActivityEventSchema(BaseModel):
+    id: int
+    timestamp: str
+    event_type: str
+    severity: str
+    message: str
+    metadata_json: Optional[str] = None
+
+
+class IntelligenceBriefSchema(BaseModel):
+    date: str
+    content_markdown: str
+    created_at: str
+
+
+class InsuranceMarketSchema(BaseModel):
+    jwc_status: str
+    is_listed_area: bool
+    premium_bps: float
+    baseline_bps: float
+    multiplier: float
 
 
 class DisruptionEventSchema(BaseModel):
@@ -155,6 +453,23 @@ class DisruptionEventSchema(BaseModel):
     longitude: Optional[float] = None
     brent_impact_pct: Optional[float] = 0.0
     source: Optional[str] = None
+
+
+class BunkerPriceSchema(BaseModel):
+    date: str
+    vlsfo_price: float
+    hsfo_price: float
+    spread: float
+
+
+class TerminalWeatherSchema(BaseModel):
+    terminal_name: str
+    latitude: float
+    longitude: float
+    wind_speed_knots: float
+    wind_gusts_knots: float
+    wave_height_m: Optional[float] = None
+    is_alert_active: bool
 
 
 # ── Vessel classification helpers ────────────────────────────────────────────

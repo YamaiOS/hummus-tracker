@@ -1,12 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
-import { AlertTriangle } from 'lucide-react'
 import { fetchDisruptions, DisruptionEvent } from '../api/client'
 
-const severityStyles: Record<string, { border: string; bg: string; badge: string }> = {
-  critical: { border: 'border-red-800/50', bg: 'bg-red-950/20', badge: 'bg-red-900 text-red-300' },
-  high: { border: 'border-amber-800/50', bg: 'bg-amber-950/20', badge: 'bg-amber-900 text-amber-300' },
-  medium: { border: 'border-yellow-800/50', bg: 'bg-yellow-950/20', badge: 'bg-yellow-900 text-yellow-300' },
-  low: { border: 'border-slate-700/50', bg: 'bg-slate-800/20', badge: 'bg-slate-700 text-slate-300' },
+const severityColors: Record<string, { dot: string; text: string }> = {
+  critical: { dot: 'bg-petro-red', text: 'text-petro-red' },
+  high: { dot: 'bg-petro-gold', text: 'text-petro-gold' },
+  medium: { dot: 'bg-petro-gold', text: 'text-petro-gold' },
+  low: { dot: 'bg-text-faint', text: 'text-text-faint' },
 }
 
 export default function DisruptionTimeline() {
@@ -18,26 +17,23 @@ export default function DisruptionTimeline() {
 
   if (isLoading) {
     return (
-      <div className="space-y-3">
-        {[1, 2, 3].map(i => (
-          <div key={i} className="h-20 bg-slate-800/30 rounded-lg animate-pulse" />
-        ))}
+      <div className="h-32 flex items-center justify-center">
+        <span className="text-xs text-text-muted">Loading...</span>
       </div>
     )
   }
 
-  const events = [...(data?.events ?? [])].sort((a, b) => 
+  const events = [...(data?.events ?? [])].sort((a, b) =>
     new Date(b.date).getTime() - new Date(a.date).getTime()
   )
 
   if (events.length === 0) {
-    return <p className="text-sm text-slate-500 text-center py-8">No disruption events recorded</p>
+    return <p className="text-sm text-text-faint text-center py-8">No disruption events recorded</p>
   }
 
   return (
     <div className="relative">
-      {/* Timeline line */}
-      <div className="absolute left-[18px] top-3 bottom-3 w-px bg-slate-800" />
+      <div className="absolute left-[18px] top-3 bottom-3 w-px bg-petro-border" />
 
       <div className="space-y-3">
         {events.map((evt, i) => (
@@ -49,43 +45,34 @@ export default function DisruptionTimeline() {
 }
 
 function EventCard({ event }: { event: DisruptionEvent }) {
-  const style = severityStyles[event.severity] || severityStyles.low
+  const style = severityColors[event.severity] || severityColors.low
 
   return (
     <div className="flex gap-3 relative">
-      {/* Timeline dot */}
       <div className="flex-shrink-0 w-9 flex justify-center pt-3 z-10">
-        <div className={`w-3 h-3 rounded-full border-2 ${style.border} ${style.bg}`} />
+        <div className={`w-3 h-3 rounded-full ${style.dot}`} />
       </div>
 
-      {/* Card */}
-      <div className={`flex-1 rounded-lg border ${style.border} ${style.bg} px-4 py-3`}>
+      <div className="flex-1 border-b border-petro-border pb-3">
         <div className="flex items-start justify-between gap-2 mb-1">
-          <div className="flex items-center gap-2">
-            <AlertTriangle size={13} className="text-amber-500 flex-shrink-0" />
-            <h3 className="text-sm font-semibold text-slate-200">{event.title}</h3>
-          </div>
+          <h3 className="text-sm font-semibold text-text-warm">{event.title}</h3>
           <div className="flex items-center gap-2 flex-shrink-0">
             {event.category && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700 uppercase font-medium">
-                {event.category}
-              </span>
+              <span className="text-xs text-text-faint uppercase font-bold">{event.category}</span>
             )}
-            <span className={`text-[10px] px-1.5 py-0.5 rounded ${style.badge} uppercase font-bold`}>
-              {event.severity}
-            </span>
-            <span className="text-[10px] text-slate-500">{formatDate(event.date)}</span>
+            <span className={`text-xs font-bold uppercase ${style.text}`}>{event.severity}</span>
+            <span className="text-xs text-text-faint font-mono">{formatDate(event.date)}</span>
           </div>
         </div>
-        <p className="text-xs text-slate-400 leading-relaxed">{event.description}</p>
+        <p className="text-xs text-text-muted leading-relaxed">{event.description}</p>
         <div className="flex items-center gap-3 mt-2">
           {event.brent_impact_pct !== 0 && (
-            <span className={`text-[10px] font-medium ${event.brent_impact_pct > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+            <span className={`text-xs font-mono font-bold ${event.brent_impact_pct > 0 ? 'text-petro-red' : 'text-petro-green'}`}>
               Brent: {event.brent_impact_pct > 0 ? '+' : ''}{event.brent_impact_pct.toFixed(1)}%
             </span>
           )}
           {event.source && (
-            <span className="text-[10px] text-slate-600">Source: {event.source}</span>
+            <span className="text-xs text-text-faint">Source: {event.source}</span>
           )}
         </div>
       </div>

@@ -21,9 +21,9 @@ export default function FlowMeter() {
   const totalBarrels = estimate?.total_estimated_barrels ?? 0
 
   const barColor =
-    pctOfBaseline >= 90 ? 'bg-emerald-500' :
-    pctOfBaseline >= 70 ? 'bg-amber-500' :
-    'bg-red-500'
+    pctOfBaseline >= 90 ? 'bg-petro-green' :
+    pctOfBaseline >= 70 ? 'bg-petro-gold' :
+    'bg-petro-red'
 
   const statusLabel =
     pctOfBaseline >= 90 ? 'Normal flow' :
@@ -34,34 +34,31 @@ export default function FlowMeter() {
   return (
     <div className="space-y-4">
       {loadingEst ? (
-        <div className="space-y-3">
-          <div className="h-6 bg-slate-800/50 rounded animate-pulse" />
-          <div className="h-4 bg-slate-800/50 rounded animate-pulse w-2/3" />
+        <div className="h-16 flex items-center justify-center">
+          <span className="text-xs text-text-muted">Loading...</span>
         </div>
       ) : (
         <>
-          {/* Main gauge */}
           <div>
             <div className="flex items-end justify-between mb-1">
-              <span className="text-2xl font-bold text-slate-100">
-                {estimatedMbpd > 0 ? estimatedMbpd.toFixed(1) : '—'}
+              <span className="text-2xl font-bold font-mono text-text-warm">
+                {estimatedMbpd > 0 ? estimatedMbpd.toFixed(1) : '\u2014'}
               </span>
-              <span className="text-xs text-slate-500">/ {baselineMbpd.toFixed(1)} mbpd baseline</span>
+              <span className="text-xs text-text-faint">/ {baselineMbpd.toFixed(1)} mbpd baseline</span>
             </div>
-            <div className="h-3 bg-slate-800 rounded-full overflow-hidden">
+            <div className="h-3 bg-petro-border rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-1000 ${barColor}`}
                 style={{ width: `${Math.min(pctOfBaseline, 100)}%` }}
               />
             </div>
             <div className="flex justify-between mt-1">
-              <span className="text-[10px] text-slate-500">{pctOfBaseline.toFixed(0)}% of baseline</span>
-              <span className="text-[10px] text-slate-500">{statusLabel}</span>
+              <span className="text-xs text-text-faint">{pctOfBaseline.toFixed(0)}% of baseline</span>
+              <span className="text-xs text-text-faint">{statusLabel}</span>
             </div>
           </div>
 
-          {/* Breakdown */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-4">
             <Stat label="Tankers Observed" value={tankersObserved} />
             <Stat label="Loaded Tankers" value={loadedTankers} />
             <Stat label="Est. Total Barrels" value={formatBarrels(totalBarrels)} />
@@ -69,13 +66,13 @@ export default function FlowMeter() {
           </div>
 
           {estimate?.vessel_breakdown && (
-            <div className="border-t border-slate-800 pt-3">
-              <p className="text-[10px] text-slate-500 uppercase mb-2">By Vessel Class</p>
+            <div className="border-t border-petro-border pt-3">
+              <p className="text-xs text-text-faint uppercase font-bold tracking-wide mb-2">By Vessel Class</p>
               <div className="space-y-1.5">
                 {Object.entries(estimate.vessel_breakdown as Record<string, number>).map(([cls, count]) => (
                   <div key={cls} className="flex items-center justify-between text-xs">
-                    <span className="text-slate-400">{cls}</span>
-                    <span className="text-slate-200 font-medium">{count}</span>
+                    <span className="text-text-muted">{cls}</span>
+                    <span className="text-text-warm font-mono font-bold">{count}</span>
                   </div>
                 ))}
               </div>
@@ -89,9 +86,9 @@ export default function FlowMeter() {
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="bg-slate-800/30 rounded-lg px-2.5 py-2">
-      <p className="text-[10px] text-slate-500 uppercase">{label}</p>
-      <p className="text-sm font-semibold text-slate-200">{value}</p>
+    <div className="bg-petro-bg border border-petro-border rounded px-2.5 py-2">
+      <p className="text-xs text-text-muted uppercase font-bold tracking-wide">{label}</p>
+      <p className="text-sm font-mono font-bold text-text-warm">{value}</p>
     </div>
   )
 }

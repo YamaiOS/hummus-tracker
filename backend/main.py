@@ -21,9 +21,16 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from .database import init_db
-from .routers import vessels, flow, prices, disruptions
+from .routers import vessels, flow, prices, disruptions, fujairah, congestion, weather
 from .services.ais_stream import run_ais_stream
 from .services.scheduler import start_scheduler, aggregate_daily_transits
+from .services.compliance import seed_quotas
+from .services.insurance import seed_insurance_data
+from .services.bunkers import seed_bunker_history
+from .services.fujairah import seed_fujairah_history
+from .services.status import get_strait_status
+from .services.activity import get_recent_activity
+from .services.daily_brief import get_latest_brief
 
 logging.basicConfig(
     level=logging.INFO,
@@ -36,7 +43,11 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """Start AIS stream consumer and background scheduler on app startup."""
     init_db()
-    logger.info("Database initialized.")
+    seed_quotas()
+    seed_insurance_data()
+    seed_fujairah_history()
+    seed_bunker_history()
+    logger.info("Database initialized, quotas, insurance, bunker and Fujairah history seeded.")
 
     # Start AIS WebSocket consumer as background task
     ais_task = asyncio.create_task(run_ais_stream())
@@ -78,11 +89,32 @@ app.include_router(vessels.router, prefix="/api")
 app.include_router(flow.router, prefix="/api")
 app.include_router(prices.router, prefix="/api")
 app.include_router(disruptions.router, prefix="/api")
+app.include_router(fujairah.router, prefix="/api")
+app.include_router(congestion.router, prefix="/api")
+app.include_router(weather.router, prefix="/api")
 
 
 @app.get("/api/health")
 def health():
     return {"status": "ok", "service": "hummus-tracker"}
+
+
+@app.get("/api/status")
+async def status():
+    """Composite health status of the Strait of Hormuz."""
+    return await get_strait_status()
+
+
+@app.get("/api/activity")
+async def activity(limit: int = 50):
+    """Recent intelligence events for the activity feed."""
+    return await get_recent_activity(limit=limit)
+
+
+@app.get("/api/brief/latest")
+async def latest_brief():
+    """Most recent auto-generated daily intelligence brief."""
+    return await get_latest_brief()
 
 
 @app.get("/api/overview")
@@ -95,7 +127,11 @@ async def overview():
 
     vessels = get_live_vessels()
     tankers = [v for v in vessels if v.get("vessel_type", 0) in range(70, 90)]
-    loaded = [v for v in tankers if v.get("is_loaded")]
+    loaded_outbound = [v for v in tankers if v.get("is_loaded") and v.get("direction") == "outbound"]
+    ballast_inbound = [v for v in tankers if not v.get("is_loaded") and v.get("direction") == "inbound"]
+    
+    total_dwt_outbound = sum(v.get("dwt", 0) or 0 for v in loaded_outbound)
+    io_ratio = (len(loaded_outbound) / len(ballast_inbound)) if len(ballast_inbound) > 0 else 1.0
 
     oil_prices = await get_latest_prices()
     baseline = await fetch_hormuz_flow()
@@ -106,8 +142,10 @@ async def overview():
         "strait_status": {
             "vessels_tracked": len(vessels),
             "tankers_active": len(tankers),
-            "loaded_tankers": len(loaded),
-            "ballast_tankers": len(tankers) - len(loaded),
+            "loaded_tankers": len(loaded_outbound),
+            "ballast_tankers": len(ballast_inbound),
+            "total_dwt_outbound": total_dwt_outbound,
+            "inbound_outbound_ratio": io_ratio,
         },
         "oil_flow": {
             "eia_baseline_mbpd": baseline["baseline_mbpd"],

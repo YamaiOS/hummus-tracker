@@ -8,11 +8,31 @@ from sqlalchemy import func, cast, Date
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import VesselTransit, DailyTransitSummary, DisruptionEvent
+from ..models import VesselTransit, DailyTransitSummary, DisruptionEvent, ComplianceRecord
 from ..services.eia import fetch_hormuz_flow
 from ..services.imf_portwatch import fetch_hormuz_summary, fetch_hormuz_transits
+from ..services.compliance import calculate_compliance
+from ..services.insurance import get_insurance_status
 
 router = APIRouter(prefix="/flow", tags=["flow"])
+
+
+@router.get("/insurance")
+async def get_insurance():
+    """Current war risk insurance premiums and JWC status."""
+    return await get_insurance_status()
+
+
+@router.get("/opec-compliance")
+async def get_opec_compliance():
+    """OPEC+ production quotas vs observed AIS-based export flows."""
+    results = await calculate_compliance()
+    return {
+        "compliance": results,
+        "date": datetime.utcnow().date().isoformat(),
+        "period_days": 7,
+        "note": "Observed mbpd is estimated from outbound loaded tankers, attributed by loading port/destination inference."
+    }
 
 
 @router.get("/impact")
@@ -187,6 +207,7 @@ async def get_daily_summary(
                 "loaded_count": s.loaded_count,
                 "ballast_count": s.ballast_count,
                 "estimated_mbpd": s.estimated_mbpd,
+                "ton_mile_index": s.ton_mile_index,
                 "brent_price": s.brent_price,
                 "wti_price": s.wti_price,
             }

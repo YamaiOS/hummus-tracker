@@ -4,28 +4,18 @@ interface Exporter {
 }
 
 const FLAG_MAP: Record<string, string> = {
-  'Saudi Arabia': '🇸🇦',
-  'Iraq': '🇮🇶',
-  'UAE': '🇦🇪',
-  'Kuwait': '🇰🇼',
-  'Qatar': '🇶🇦',
-  'Iran': '🇮🇷',
-  'Bahrain': '🇧🇭',
+  'Saudi Arabia': '\u{1F1F8}\u{1F1E6}',
+  'Iraq': '\u{1F1EE}\u{1F1F6}',
+  'UAE': '\u{1F1E6}\u{1F1EA}',
+  'Kuwait': '\u{1F1F0}\u{1F1FC}',
+  'Qatar': '\u{1F1F6}\u{1F1E6}',
+  'Iran': '\u{1F1EE}\u{1F1F7}',
+  'Bahrain': '\u{1F1E7}\u{1F1ED}',
 }
-
-const BAR_COLORS = [
-  'bg-amber-500',
-  'bg-emerald-500',
-  'bg-blue-500',
-  'bg-violet-500',
-  'bg-cyan-500',
-  'bg-rose-500',
-  'bg-slate-500',
-]
 
 export default function ExporterBreakdown({ exporters }: { exporters: Exporter[] }) {
   if (exporters.length === 0) {
-    return <p className="text-sm text-slate-500 text-center py-4">No exporter data</p>
+    return <p className="text-sm text-text-faint text-center py-4">No exporter data</p>
   }
 
   const total = exporters.reduce((sum, e) => sum + e.mbpd, 0)
@@ -35,23 +25,22 @@ export default function ExporterBreakdown({ exporters }: { exporters: Exporter[]
       {exporters.map((exp, i) => {
         const pct = total > 0 ? (exp.mbpd / total) * 100 : 0
         const flag = FLAG_MAP[exp.country] ?? ''
-        const barColor = BAR_COLORS[i % BAR_COLORS.length]
 
         return (
           <div key={exp.country}>
             <div className="flex items-center justify-between mb-0.5">
               <div className="flex items-center gap-1.5">
                 {flag && <span className="text-sm">{flag}</span>}
-                <span className="text-xs text-slate-300">{exp.country}</span>
+                <span className="text-xs text-text-warm">{exp.country}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-slate-200">{exp.mbpd.toFixed(1)}</span>
-                <span className="text-[10px] text-slate-500 w-10 text-right">{pct.toFixed(0)}%</span>
+                <span className="text-xs font-mono font-bold text-text-warm">{exp.mbpd.toFixed(1)}</span>
+                <span className="text-xs text-text-faint w-10 text-right">{pct.toFixed(0)}%</span>
               </div>
             </div>
-            <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-petro-border rounded-full overflow-hidden">
               <div
-                className={`h-full rounded-full ${barColor}`}
+                className="h-full rounded-full bg-petro-teal"
                 style={{ width: `${pct}%` }}
               />
             </div>
@@ -59,9 +48,9 @@ export default function ExporterBreakdown({ exporters }: { exporters: Exporter[]
         )
       })}
 
-      <div className="border-t border-slate-800 pt-2 flex items-center justify-between">
-        <span className="text-[10px] text-slate-500 uppercase">Total via Hormuz</span>
-        <span className="text-xs font-bold text-slate-200">{total.toFixed(1)} mbpd</span>
+      <div className="border-t border-petro-border pt-2 flex items-center justify-between">
+        <span className="text-xs text-text-faint uppercase font-bold tracking-wide">Total via Hormuz</span>
+        <span className="text-xs font-mono font-bold text-text-warm">{total.toFixed(1)} mbpd</span>
       </div>
     </div>
   )

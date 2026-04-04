@@ -2,11 +2,44 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+@layer base {
+  body {
+    @apply bg-petro-bg text-text-warm font-sans antialiased;
+  }
+
+  /* Bloomberg-style font smoothing */
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 }
 
 .leaflet-container {
-  background: #0f172a !important;
+  background: #0a1628 !important;
+}
+
+/* Petronas Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  @apply bg-petro-bg;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-petro-border rounded;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  @apply bg-petro-teal;
+}
+
+/* Tooltip & Popups override */
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  @apply bg-petro-card text-text-warm border border-petro-border rounded shadow-none !important;
+}
+
+.leaflet-tooltip {
+  @apply bg-petro-card text-text-warm border border-petro-border rounded-sm shadow-none font-mono text-[11px] !important;
 }

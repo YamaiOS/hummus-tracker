@@ -9,7 +9,11 @@ export default function VolumeByFlag() {
   })
 
   if (isLoading) {
-    return <div className="h-48 bg-slate-800/20 animate-pulse rounded-lg" />
+    return (
+      <div className="h-48 flex items-center justify-center">
+        <span className="text-xs text-text-muted">Loading...</span>
+      </div>
+    )
   }
 
   const transits = data?.selective_transits ?? []
@@ -18,34 +22,28 @@ export default function VolumeByFlag() {
   return (
     <div className="space-y-4">
       {transits.length === 0 ? (
-        <p className="text-xs text-slate-500 text-center py-10 italic">No outbound transit data available for breakdown</p>
+        <p className="text-sm text-text-faint text-center py-8">No outbound transit data available</p>
       ) : (
         transits.map((item, i) => (
           <div key={i} className="space-y-1.5">
             <div className="flex justify-between items-end">
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-bold text-slate-200">{item.flag}</span>
-                <span className="text-[9px] text-slate-500 uppercase tracking-tighter">{item.vessels} Vessels</span>
+                <span className="text-xs font-bold text-text-warm">{item.flag}</span>
+                <span className="text-xs text-text-faint uppercase">{item.vessels} Vessels</span>
               </div>
-              <span className="text-[10px] font-mono text-slate-400">
+              <span className="text-xs font-mono text-text-muted">
                 {(item.barrels / 1_000_000).toFixed(2)}M bbl
               </span>
             </div>
-            <div className="h-1.5 w-full bg-slate-800/50 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-amber-500/60 rounded-full transition-all duration-1000"
+            <div className="h-1.5 w-full bg-petro-border rounded-full overflow-hidden">
+              <div
+                className="h-full bg-petro-gold rounded-full transition-all duration-1000"
                 style={{ width: `${(item.barrels / maxBarrels) * 100}%` }}
               />
             </div>
           </div>
         ))
       )}
-      
-      <div className="mt-6 pt-4 border-t border-slate-800/50">
-        <p className="text-[9px] text-slate-600 leading-relaxed italic">
-          * Selective Transit Intelligence: Monitoring volume flow by sovereign flag to identify selective permitting or blockade patterns in the Strait.
-        </p>
-      </div>
     </div>
   )
 }

@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query'
-import { Gauge, TrendingUp, Anchor, AlertCircle } from 'lucide-react'
 import { fetchFreight } from '../api/client'
 
 export default function FreightRates() {
@@ -9,64 +8,45 @@ export default function FreightRates() {
     refetchInterval: 60_000,
   })
 
-  if (isLoading) {
-    return <div className="h-48 bg-slate-800/20 animate-pulse rounded-lg" />
+  if (isLoading && !data) {
+    return (
+      <div className="h-32 flex items-center justify-center">
+        <span className="text-xs text-text-muted">Loading Rates...</span>
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-            data?.market_sentiment === 'BULLISH' ? 'bg-red-900 text-red-200' : 'bg-slate-800 text-slate-400'
-          }`}>
-            SENTIMENT: {data?.market_sentiment}
-          </span>
-        </div>
-        <div className="text-right">
-          <p className="text-[9px] text-slate-500 uppercase font-bold tracking-tighter">Risk Premium</p>
-          <p className="text-xs font-bold text-amber-500">+{((data?.risk_multiplier || 1) - 1).toFixed(2)}x</p>
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        {data?.estimates.map((est, i) => (
-          <div key={i} className="bg-slate-950/50 border border-slate-800 rounded-lg p-3 hover:border-slate-700 transition-colors">
-            <div className="flex justify-between items-start mb-2">
-              <div>
-                <h4 className="text-xs font-black text-slate-200">{est.class}</h4>
-                <p className="text-[9px] text-slate-500 font-medium uppercase">{est.route}</p>
-              </div>
-              <div className={`flex items-center gap-1 text-[9px] font-bold ${
-                est.status === 'RISING' ? 'text-red-400' : 'text-slate-500'
-              }`}>
-                {est.status === 'RISING' && <TrendingUp size={10} />}
-                {est.status}
-              </div>
+    <div className="space-y-0 divide-y divide-petro-border">
+      {data?.estimates.map((est, i) => (
+        <div key={i} className="py-3 px-1 hover:bg-petro-card-hover transition-colors group">
+          <div className="flex justify-between items-start mb-2">
+            <div className="min-w-0">
+              <h4 className="text-xs font-bold text-text-warm uppercase tracking-tight truncate">{est.class}</h4>
+              <p className="text-[11px] text-text-faint font-mono uppercase truncate">{est.route}</p>
             </div>
-            
-            <div className="flex justify-between items-end">
-              <div className="space-y-0.5">
-                <p className="text-[9px] text-slate-500 uppercase font-bold">Worldscale (WS)</p>
-                <p className="text-lg font-mono font-bold text-amber-500">{est.ws_points}</p>
-              </div>
-              <div className="text-right space-y-0.5">
-                <p className="text-[9px] text-slate-500 uppercase font-bold">Est. Day Rate (TCE)</p>
-                <p className="text-lg font-mono font-bold text-emerald-500">
-                  ${(est.tce_day_rate_usd / 1000).toFixed(1)}k<span className="text-[10px] text-slate-600 ml-0.5">/day</span>
-                </p>
-              </div>
+            <div className={`text-[11px] font-bold uppercase tracking-tighter ${
+              est.status === 'RISING' ? 'text-petro-gold' : 'text-text-faint'
+            }`}>
+              {est.status}
             </div>
           </div>
-        ))}
-      </div>
-
-      <div className="mt-4 p-2 bg-blue-950/20 border border-blue-900/30 rounded-lg flex gap-2 items-start">
-        <AlertCircle size={14} className="text-blue-400 mt-0.5 flex-shrink-0" />
-        <p className="text-[9px] text-blue-300/70 leading-relaxed italic">
-          Heuristic Freight Model: Estimates derived from Brent spot volatility, VLSFO fuel adjustment, and War Risk premiums associated with Strait of Hormuz chokepoint activity.
-        </p>
-      </div>
+          
+          <div className="flex justify-between items-baseline font-mono">
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-xs text-text-muted uppercase font-bold">WS</span>
+              <span className="text-sm font-bold text-text-warm">{est.ws_points}</span>
+            </div>
+            <div className="text-right flex items-baseline gap-1.5">
+              <span className="text-xs text-text-muted uppercase font-bold">TCE</span>
+              <span className="text-sm font-bold text-petro-teal">
+                ${(est.tce_day_rate_usd / 1000).toFixed(1)}K
+                <span className="text-xs text-text-faint ml-0.5 lowercase font-normal">/day</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   )
 }

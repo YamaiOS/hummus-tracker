@@ -18,8 +18,8 @@ export default function PriceChart() {
     staleTime: 5 * 60_000,
   })
 
-  if (loadingPrices) {
-    return <div className="h-[300px] flex items-center justify-center text-sm text-slate-500 animate-pulse">Loading price data...</div>
+  if (loadingPrices && !priceData) {
+    return <div className="h-[300px] flex items-center justify-center text-xs text-text-faint uppercase font-bold tracking-wide">Loading Market Data...</div>
   }
 
   const prices = priceData?.prices ?? []
@@ -38,55 +38,67 @@ export default function PriceChart() {
   return (
     <div className="h-[300px]">
       <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+        <ComposedChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#1c2e4a" vertical={false} />
           <XAxis
             dataKey="date"
-            tick={{ fontSize: 10, fill: '#64748b' }}
+            tick={{ fontSize: 10, fill: '#566b8a', fontFamily: 'monospace' }}
             tickFormatter={(d: string) => {
               const dt = new Date(d)
               return `${dt.getMonth() + 1}/${dt.getDate()}`
             }}
             interval="preserveStartEnd"
             minTickGap={40}
+            axisLine={false}
+            tickLine={false}
           />
           <YAxis
             yAxisId="price"
-            tick={{ fontSize: 10, fill: '#64748b' }}
+            tick={{ fontSize: 10, fill: '#566b8a', fontFamily: 'monospace' }}
             tickFormatter={(v: number) => `$${v}`}
-            domain={['dataMin - 5', 'dataMax + 5']}
+            domain={['auto', 'auto']}
+            axisLine={false}
+            tickLine={false}
           />
           <YAxis
             yAxisId="transits"
             orientation="right"
-            tick={{ fontSize: 10, fill: '#64748b' }}
+            tick={{ fontSize: 10, fill: '#566b8a', fontFamily: 'monospace' }}
             domain={[0, 'auto']}
+            axisLine={false}
+            tickLine={false}
+            hide
           />
           <Tooltip
             contentStyle={{
-              backgroundColor: '#0f172a',
-              border: '1px solid #334155',
-              borderRadius: '8px',
+              backgroundColor: '#0f1d32',
+              border: '1px solid #1c2e4a',
+              borderRadius: '4px',
               fontSize: 11,
             }}
+            labelStyle={{ color: '#8b9bb4', fontWeight: 'bold', marginBottom: '4px' }}
+            itemStyle={{ padding: '0px' }}
             labelFormatter={(d: string) => new Date(d).toLocaleDateString()}
             formatter={(value: number, name: string) => {
-              if (name === 'transits') return [value, 'Tanker Transits']
-              return [`$${value?.toFixed(2)}`, name === 'brent' ? 'Brent' : 'WTI']
+              if (name === 'transits') return [value, 'TRANSITS']
+              return [`$${value?.toFixed(2)}`, name.toUpperCase()]
             }}
           />
           <Legend
-            wrapperStyle={{ fontSize: 11 }}
+            verticalAlign="top"
+            align="right"
+            wrapperStyle={{ fontSize: 10, fontFamily: 'monospace', paddingBottom: '10px' }}
             formatter={(value: string) => {
-              const labels: Record<string, string> = { brent: 'Brent Crude', wti: 'WTI', transits: 'Tanker Transits' }
-              return labels[value] || value
+              const labels: Record<string, string> = { brent: 'BRENT', wti: 'WTI', transits: 'TRANSITS' }
+              return labels[value] || value.toUpperCase()
             }}
           />
           <Line
             yAxisId="price"
             type="monotone"
             dataKey="brent"
-            stroke="#f59e0b"
+            name="brent"
+            stroke="#00a19c"
             strokeWidth={2}
             dot={false}
             connectNulls
@@ -95,7 +107,8 @@ export default function PriceChart() {
             yAxisId="price"
             type="monotone"
             dataKey="wti"
-            stroke="#10b981"
+            name="wti"
+            stroke="#c4a35a"
             strokeWidth={1.5}
             dot={false}
             connectNulls
@@ -104,9 +117,10 @@ export default function PriceChart() {
           <Bar
             yAxisId="transits"
             dataKey="transits"
-            fill="#3b82f6"
-            opacity={0.3}
-            barSize={3}
+            name="transits"
+            fill="#566b8a"
+            opacity={0.2}
+            barSize={2}
           />
         </ComposedChart>
       </ResponsiveContainer>

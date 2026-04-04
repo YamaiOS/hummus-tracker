@@ -10,8 +10,39 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import VesselTransit
 from ..services.ais_stream import get_live_vessels, get_stream_status
+from ..services.storage import get_active_floating_storage, get_storage_summary
+from ..services.dark_vessels import get_active_dark_vessels
+from ..services.sts_detection import get_active_sts_events
 
 router = APIRouter(prefix="/vessels", tags=["vessels"])
+
+
+@router.get("/sts")
+async def get_sts_events():
+    """Potential Ship-to-Ship (STS) transfer events in progress."""
+    events = await get_active_sts_events()
+    return {"events": events, "count": len(events)}
+
+
+@router.get("/dark")
+async def get_dark_vessels():
+    """Vessels that have disappeared from AIS mid-transit."""
+    vessels = await get_active_dark_vessels()
+    return {"vessels": vessels, "count": len(vessels)}
+
+
+@router.get("/floating-storage")
+async def get_floating_storage():
+    """Current vessels identified as floating storage (stationary + loaded)."""
+    vessels = await get_active_floating_storage()
+    summary = await get_storage_summary()
+
+    return {
+        "vessels": vessels,
+        "summary": summary,
+        "count": len(vessels),
+        "total_barrels": summary["total_barrels"] if summary else sum(v["estimated_barrels"] for v in vessels),
+    }
 
 
 @router.get("/live")
@@ -44,7 +75,6 @@ def get_transit_history(
         .all()
     )
 
-    # Deduplicate by MMSI (keep latest)
     seen = {}
     for t in transits:
         if t.mmsi not in seen:

@@ -1,7 +1,17 @@
 import { useQuery } from '@tanstack/react-query'
-import { MapContainer, TileLayer, CircleMarker, Popup, Rectangle, Polyline } from 'react-leaflet'
-import { fetchLiveVessels, fetchDisruptions, Vessel } from '../api/client'
+import { MapContainer, TileLayer, CircleMarker, Popup, Rectangle, Polyline, Tooltip } from 'react-leaflet'
+import { 
+  fetchLiveVessels, 
+  fetchDisruptions, 
+  fetchDarkVessels,
+  fetchSTSEvents,
+  fetchFloatingStorage,
+  Vessel 
+} from '../api/client'
 import 'leaflet/dist/leaflet.css'
+import { Anchor, EyeOff, Link2 } from 'lucide-react'
+import L from 'leaflet'
+import { renderToStaticMarkup } from 'react-dom/server'
 
 const HORMUZ_CENTER: [number, number] = [26.0, 56.5]
 const HORMUZ_BOUNDS: [[number, number], [number, number]] = [
@@ -12,10 +22,23 @@ const HORMUZ_BOUNDS: [[number, number], [number, number]] = [
 const OUTBOUND_LANE: [number, number][] = [[25.2, 55.2], [25.8, 55.8], [26.4, 56.3], [26.7, 56.6], [26.3, 57.2], [25.8, 57.8]]
 const INBOUND_LANE: [number, number][] = [[25.5, 57.8], [26.5, 57.0], [27.1, 56.6], [26.8, 56.2], [26.2, 55.7], [25.0, 54.8]]
 
+const createIcon = (icon: React.ReactNode, color: string) => {
+  return L.divIcon({
+    html: renderToStaticMarkup(
+      <div style={{ color }}>
+        {icon}
+      </div>
+    ),
+    className: 'custom-div-icon',
+    iconSize: [20, 20],
+    iconAnchor: [10, 10],
+  })
+}
+
 function vesselColor(v: Vessel) {
-  if (v.is_loaded) return '#10b981' // emerald — loaded outbound
-  if (v.direction === 'inbound') return '#64748b' // slate — ballast inbound
-  return '#f59e0b' // amber — other tanker
+  if (v.is_loaded) return '#c4a35a' // --accent-gold for loaded outbound
+  if (v.direction === 'inbound') return '#566b8a' // --text-tertiary for ballast
+  return '#00a19c' // --accent-teal for normal tankers
 }
 
 function vesselRadius(v: Vessel) {
@@ -38,79 +61,105 @@ export default function VesselMap() {
     queryFn: fetchDisruptions,
   })
 
+  const { data: darkData } = useQuery({
+    queryKey: ['darkVessels'],
+    queryFn: fetchDarkVessels,
+    refetchInterval: 60_000,
+  })
+
+  const { data: stsData } = useQuery({
+    queryKey: ['stsEvents'],
+    queryFn: fetchSTSEvents,
+    refetchInterval: 60_000,
+  })
+
+  const { data: storageData } = useQuery({
+    queryKey: ['floatingStorage'],
+    queryFn: fetchFloatingStorage,
+    refetchInterval: 60_000,
+  })
+
   const vessels = data?.vessels ?? []
   const events = disruptionData?.events ?? []
+  const darkVessels = darkData?.vessels ?? []
+  const stsEvents = stsData?.events ?? []
+  const floatingStorage = storageData?.vessels ?? []
 
   return (
-    <div className="h-[400px] w-full rounded-lg overflow-hidden relative">
+    <div className="h-full min-h-[400px] w-full rounded-lg overflow-hidden relative border border-petro-border">
       {isLoading && (
-        <div className="absolute inset-0 z-[1000] flex items-center justify-center bg-slate-900/60">
-          <p className="text-sm text-slate-400 animate-pulse">Loading AIS positions...</p>
+        <div className="absolute inset-0 z-[1000] flex items-center justify-center bg-petro-bg/80">
+          <p className="text-sm text-text-muted">Loading positions...</p>
         </div>
       )}
       <MapContainer
         center={HORMUZ_CENTER}
         zoom={7}
         className="h-full w-full"
-        style={{ background: '#0f172a' }}
+        style={{ background: '#0a1628' }}
       >
         <TileLayer
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           attribution='&copy; <a href="https://carto.com/">CARTO</a>'
         />
 
-        {/* Hormuz bounding box */}
         <Rectangle
           bounds={HORMUZ_BOUNDS}
-          pathOptions={{ color: '#f59e0b', weight: 1, fillOpacity: 0.03, dashArray: '6 4' }}
+          pathOptions={{ color: '#c4a35a', weight: 1, fillOpacity: 0.02, dashArray: '4 4' }}
         />
 
-        {/* Shipping Lanes */}
+        {/* Shipping Lanes — subtle branding */}
         <Polyline 
           positions={OUTBOUND_LANE} 
-          pathOptions={{ color: '#10b981', weight: 12, opacity: 0.1, lineCap: 'round' }} 
+          pathOptions={{ color: '#00a19c', weight: 8, opacity: 0.05, lineCap: 'round' }} 
         />
         <Polyline 
           positions={INBOUND_LANE} 
-          pathOptions={{ color: '#64748b', weight: 12, opacity: 0.1, lineCap: 'round' }} 
-        />
-        <Polyline 
-          positions={OUTBOUND_LANE} 
-          pathOptions={{ color: '#10b981', weight: 1, opacity: 0.3, dashArray: '5, 10' }} 
-        />
-        <Polyline 
-          positions={INBOUND_LANE} 
-          pathOptions={{ color: '#64748b', weight: 1, opacity: 0.3, dashArray: '5, 10' }} 
+          pathOptions={{ color: '#566b8a', weight: 8, opacity: 0.05, lineCap: 'round' }} 
         />
 
-        {/* Disruption Events */}
-        {events.map((evt, i) => (
-          evt.latitude && evt.longitude && (
-            <CircleMarker
-              key={`evt-${i}`}
-              center={[evt.latitude, evt.longitude]}
-              radius={10}
-              pathOptions={{
-                color: '#ef4444',
-                fillColor: '#ef4444',
-                fillOpacity: 0.4,
-                weight: 2,
-                className: 'animate-pulse'
-              }}
-            >
-              <Popup>
-                <div className="text-xs space-y-1 min-w-[150px]">
-                  <p className="font-bold text-red-500 uppercase tracking-tight">Disruption: {evt.category}</p>
-                  <p className="font-bold text-sm">{evt.title}</p>
-                  <p className="text-slate-600 line-clamp-2">{evt.description}</p>
-                  <div className="flex justify-between items-center mt-1 pt-1 border-t border-slate-100">
-                    <span className="text-[10px] font-bold text-slate-400">{evt.date}</span>
-                    <span className="text-[10px] uppercase px-1 bg-red-100 text-red-600 rounded">{evt.severity}</span>
-                  </div>
-                </div>
-              </Popup>
-            </CircleMarker>
-          )
+        {/* STS Events — Accent Gold */}
+        {stsEvents.map((sts) => (
+          <Polyline
+            key={`sts-${sts.id}`}
+            positions={[[sts.latitude, sts.longitude], [sts.latitude + 0.005, sts.longitude + 0.005]]}
+            pathOptions={{ color: '#c4a35a', weight: 2, dashArray: '2, 4' }}
+          >
+            <Tooltip permanent direction="top" opacity={1} className="bg-petro-card border-petro-gold text-petro-gold text-[11px] font-bold font-mono">
+              STS
+            </Tooltip>
+          </Polyline>
+        ))}
+
+        {/* Dark Vessels — Accent Red */}
+        {darkVessels.map((dv) => (
+          <CircleMarker
+            key={`dark-${dv.mmsi}`}
+            center={[dv.last_lat, dv.last_lon]}
+            radius={6}
+            pathOptions={{
+              color: '#c4463a',
+              fillColor: '#c4463a',
+              fillOpacity: 0.1,
+              weight: 1,
+              dashArray: '2, 2'
+            }}
+          >
+            <Tooltip permanent direction="right" opacity={1} className="bg-petro-card border-petro-red text-petro-red text-[11px] font-bold font-mono">
+              DARK
+            </Tooltip>
+          </CircleMarker>
+        ))}
+
+        {/* Floating Storage — Petronas Teal */}
+        {floatingStorage.map((fs) => (
+          <L.Marker
+            key={`storage-${fs.mmsi}`}
+            position={[fs.latitude, fs.longitude]}
+            icon={createIcon(<Anchor size={12} />, '#00a19c')}
+          >
+            <Tooltip direction="bottom" className="font-mono text-[11px]">STORAGE</Tooltip>
+          </L.Marker>
         ))}
 
         {vessels.map((v) => (
@@ -121,55 +170,68 @@ export default function VesselMap() {
             pathOptions={{
               color: vesselColor(v),
               fillColor: vesselColor(v),
-              fillOpacity: 0.7,
+              fillOpacity: 0.8,
               weight: 1,
             }}
           >
             <Popup>
-              <div className="text-xs space-y-1 min-w-[180px]">
-                <p className="font-bold text-sm">{v.name || `MMSI ${v.mmsi}`}</p>
-                <div className="flex items-center gap-2">
-                  {v.vessel_class && <p>Class: {v.vessel_class}</p>}
-                  {v.flag && <span className="text-[9px] px-1 bg-slate-100 border border-slate-300 rounded text-slate-600 uppercase font-bold">{v.flag}</span>}
-                </div>
-                {v.destination && <p>Dest: {v.destination}</p>}
-                {v.speed != null && <p>Speed: {v.speed.toFixed(1)} kn</p>}
-                {v.draught != null && <p>Draught: {v.draught.toFixed(1)} m</p>}
-                {v.is_loaded != null && (
-                  <p>Status: {v.is_loaded ? 'Loaded (outbound)' : 'Ballast (inbound)'}</p>
-                )}
-                {v.estimated_barrels != null && v.estimated_barrels > 0 && (
-                  <p>Est. cargo: {(v.estimated_barrels / 1_000_000).toFixed(2)}M bbl</p>
-                )}
-                <p className="text-[10px] text-gray-400">
-                  {new Date(v.observed_at).toLocaleTimeString()}
+              <div className="text-[13px] font-sans space-y-1 min-w-[180px] p-1">
+                <p className="font-bold text-text-warm border-b border-petro-border pb-1 mb-1">
+                  {v.name || v.mmsi}
                 </p>
+                <div className="grid grid-cols-2 gap-x-2 font-mono text-[11px] text-text-muted">
+                  <span>CLASS:</span> <span className="text-text-warm">{v.vessel_class}</span>
+                  <span>FLAG:</span> <span className="text-text-warm">{v.flag}</span>
+                  <span>SPEED:</span> <span className="text-text-warm">{v.speed?.toFixed(1)}kt</span>
+                  <span>LOAD:</span> <span className={v.is_loaded ? 'text-petro-teal' : 'text-text-faint'}>
+                    {v.is_loaded ? 'LOADED' : 'BALLAST'}
+                  </span>
+                </div>
+                {v.estimated_barrels && v.estimated_barrels > 0 && (
+                  <p className="text-[11px] font-bold text-petro-teal pt-1">
+                    CARGO: {(v.estimated_barrels / 1_000_000).toFixed(2)}M BBL
+                  </p>
+                )}
               </div>
             </Popup>
           </CircleMarker>
         ))}
       </MapContainer>
 
-      {/* Legend */}
-      <div className="absolute bottom-2 left-2 z-[1000] bg-slate-900/90 border border-slate-700 rounded-lg px-3 py-2 text-[10px] space-y-1">
+      {/* Legend — Bloomberg Style */}
+      <div className="absolute bottom-4 left-4 z-[1000] bg-petro-card border border-petro-border rounded px-3 py-3 text-[11px] font-mono space-y-2">
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-          <span className="text-slate-300">Loaded (outbound)</span>
+          <span className="w-2 h-2 rounded-full bg-petro-gold" />
+          <span className="text-text-muted">LOADED (OUT)</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-slate-500" />
-          <span className="text-slate-300">Ballast (inbound)</span>
+          <span className="w-2 h-2 rounded-full bg-text-faint" />
+          <span className="text-text-muted">BALLAST (IN)</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-          <span className="text-slate-300">Other tanker</span>
+          <span className="w-2 h-2 rounded-full bg-petro-teal" />
+          <span className="text-text-muted">NORMAL TANKER</span>
+        </div>
+        <div className="h-px bg-petro-border my-1" />
+        <div className="flex items-center gap-2">
+          <EyeOff size={10} className="text-petro-red" />
+          <span className="text-text-muted">SIGNAL LOSS</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link2 size={10} className="text-petro-gold" />
+          <span className="text-text-muted">POTENTIAL STS</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Anchor size={10} className="text-petro-teal" />
+          <span className="text-text-muted">FLOATING STORAGE</span>
         </div>
       </div>
 
-      {/* Stats badge */}
+      {/* Stats overlay */}
       {data && (
-        <div className="absolute top-2 right-2 z-[1000] bg-slate-900/90 border border-slate-700 rounded-lg px-3 py-1.5 text-[10px] text-slate-300">
-          {data.tanker_count} tankers | {data.loaded_count} loaded | {data.ballast_count} ballast
+        <div className="absolute top-4 right-4 z-[1000] bg-petro-card border border-petro-border rounded px-3 py-2 text-[11px] font-mono text-text-muted">
+          <span className="text-text-warm font-bold">{data.tanker_count}</span> TANKERS / 
+          <span className="text-petro-teal font-bold ml-1">{data.loaded_count}</span> LOADED
         </div>
       )}
     </div>

@@ -23,6 +23,7 @@ from ..models import (
     infer_direction,
 )
 from ..database import SessionLocal
+from .activity import log_activity
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +31,7 @@ _API_KEY = os.getenv("AISSTREAM_API_KEY", "")
 
 # In-memory vessel cache for live dashboard
 _live_vessels: Dict[str, dict] = {}
+_vessel_first_seen: Dict[str, datetime] = {} # mmsi -> first observation in bbox
 _last_message_time: Optional[datetime] = None
 _total_messages: int = 0
 _stream_mode: str = "offline"  # offline, live, mock
@@ -55,6 +57,8 @@ def get_live_vessels() -> List[dict]:
 
     for k in stale_keys:
         del _live_vessels[k]
+        if k in _vessel_first_seen:
+            del _vessel_first_seen[k]
 
     return active
 
@@ -115,8 +119,25 @@ async def _process_message(data: dict) -> None:
     vessel_class = classify_vessel(dwt, vessel_type)
     is_loaded, estimated_barrels = estimate_cargo_barrels(dwt, draught, max_draught)
     direction = infer_direction(course, lon)
+    crude_grade = _infer_crude_grade(destination, flag) if is_loaded else None
 
-    now_iso = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(timezone.utc)
+    if mmsi not in _vessel_first_seen:
+        _vessel_first_seen[mmsi] = now
+    
+    dwell_hrs = (now - _vessel_first_seen[mmsi]).total_seconds() / 3600
+    now_iso = now.isoformat()
+
+    # Destination change detection
+    if mmsi in _live_vessels:
+        old_dest = _live_vessels[mmsi].get("destination")
+        if destination and old_dest and destination != old_dest:
+            log_activity(
+                event_type="destination_pivot",
+                message=f"Pivoted: {ship_name or mmsi} changed destination from {old_dest} to {destination}",
+                severity="info",
+                metadata={"mmsi": mmsi, "old": old_dest, "new": destination}
+            )
 
     vessel_data = {
         "mmsi": mmsi,
@@ -133,10 +154,12 @@ async def _process_message(data: dict) -> None:
         "destination": destination,
         "is_loaded": is_loaded,
         "estimated_barrels": estimated_barrels,
+        "crude_grade": crude_grade,
         "direction": direction,
         "flag": flag,
         "observed_at": now_iso,
         "nav_status": nav_status,
+        "dwell_hours": dwell_hrs,
     }
 
     _live_vessels[mmsi] = vessel_data
@@ -161,6 +184,7 @@ async def _process_message(data: dict) -> None:
                 nav_status=nav_status,
                 is_loaded=is_loaded,
                 estimated_barrels=estimated_barrels,
+                crude_grade=crude_grade,
                 direction=direction,
                 flag=flag,
                 observed_at=datetime.now(timezone.utc),
@@ -178,6 +202,50 @@ def _estimate_dwt_from_type(vessel_type: int) -> float | None:
     if vessel_type in (81, 82, 83): return 80_000
     if vessel_type in (85, 86, 87, 88, 89): return 50_000
     if vessel_type in range(71, 80): return 80_000
+    return None
+
+
+def _infer_crude_grade(destination: Optional[str], flag: Optional[str]) -> str | None:
+    """Infer likely crude grade based on destination (often loading port) and flag."""
+    if not destination:
+        return None
+    
+    d = destination.upper()
+    
+    # Saudi Arabia
+    if "RAS TANURA" in d or "JUAYMAH" in d:
+        return "Arab Light/Medium"
+    if "YANBU" in d:
+        return "Arab Extra Light"
+    
+    # Iraq
+    if "BASRAH" in d or "ABOT" in d or "KAAOT" in d:
+        return "Basrah Medium/Heavy"
+    
+    # UAE
+    if "DAS ISLAND" in d:
+        return "Umm Shaif/Lower Zakum"
+    if "JEBEL DHANNA" in d or "RUWAIS" in d:
+        return "Murban"
+    if "ZIRKU" in d:
+        return "Upper Zakum"
+    
+    # Iran
+    if "KHARG" in d or "KHARQ" in d:
+        return "Iran Heavy/Light"
+    if "SOROOSH" in d or "NOWROOZ" in d:
+        return "Soroosh/Nowrooz"
+    
+    # Kuwait
+    if "MINA AL AHMADI" in d or "SHUAIBA" in d:
+        return "Kuwait Export"
+    
+    # Qatar
+    if "HALUL" in d:
+        return "Qatar Marine"
+    if "MESSAIEED" in d:
+        return "Qatar Land"
+
     return None
 
 
