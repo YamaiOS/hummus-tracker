@@ -142,13 +142,10 @@ export default function Dashboard() {
                 <Panel title="Shamal Wind Alerts" subtitle="Terminal weather conditions">
                   <WeatherAlertsPanel />
                 </Panel>
-                <Panel title="Freight Rate Modeling" subtitle="Heuristic day rates MEG-Asia">
-                  <FreightRates />
-                </Panel>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <Panel title="AIS Dark Vessels" subtitle={`${data?.strait_status?.loaded_tankers || 0} active`}>
                 <DarkVesselPanel />
               </Panel>
@@ -157,6 +154,9 @@ export default function Dashboard() {
               </Panel>
               <Panel title="Floating Storage" subtitle="Stationary loaded tonnage">
                 <FloatingStoragePanel />
+              </Panel>
+              <Panel title="Freight Rate Modeling" subtitle="Heuristic day rates MEG-Asia">
+                <FreightRates />
               </Panel>
             </div>
 
@@ -233,7 +233,7 @@ export default function Dashboard() {
 
         <footer className="text-center py-8 border-t border-petro-border">
           <p className="text-xs text-text-muted font-bold uppercase tracking-wide">
-            Petronas Strategic Intelligence — Confidential
+            Syazwan Naim Research & Development
           </p>
           <p className="text-[11px] text-text-faint mt-1">
             Data: aisstream.io | IMF PortWatch | EIA | FRED | Open-Meteo
