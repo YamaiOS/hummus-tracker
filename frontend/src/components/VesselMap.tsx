@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { MapContainer, TileLayer, CircleMarker, Popup, Rectangle, Polyline, Tooltip } from 'react-leaflet'
+import { MapContainer, TileLayer, CircleMarker, Marker, Popup, Rectangle, Polyline, Tooltip } from 'react-leaflet'
 import { 
   fetchLiveVessels, 
   fetchDisruptions, 
@@ -153,13 +153,13 @@ export default function VesselMap() {
 
         {/* Floating Storage — Petronas Teal */}
         {floatingStorage.map((fs) => (
-          <L.Marker
+          <Marker
             key={`storage-${fs.mmsi}`}
             position={[fs.latitude, fs.longitude]}
             icon={createIcon(<Anchor size={12} />, '#00a19c')}
           >
             <Tooltip direction="bottom" className="font-mono text-[11px]">STORAGE</Tooltip>
-          </L.Marker>
+          </Marker>
         ))}
 
         {vessels.map((v) => (
