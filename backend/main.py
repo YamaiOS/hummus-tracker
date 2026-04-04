@@ -20,7 +20,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
-from .database import init_db
+from .database import init_db, SessionLocal
+from .models import DailyTransitSummary
 from .routers import vessels, flow, prices, disruptions, fujairah, congestion, weather
 from .services.ais_stream import run_ais_stream
 from .services.scheduler import start_scheduler, aggregate_daily_transits
@@ -119,19 +120,58 @@ async def latest_brief():
 
 @app.get("/api/overview")
 async def overview():
-    """Dashboard overview — key metrics for the Hormuz strait."""
+    """Dashboard overview — key metrics for the Hormuz strait.
+
+    Falls back to the latest DailyTransitSummary from DB when live AIS
+    data hasn't accumulated yet (cold boot / machine resume).
+    """
     from .services.ais_stream import get_live_vessels, get_stream_status
     from .services.fred import get_latest_prices
     from .services.eia import fetch_hormuz_flow
     from .services.imf_portwatch import fetch_hormuz_summary
+    from sqlalchemy import desc
 
     vessels = get_live_vessels()
     tankers = [v for v in vessels if v.get("vessel_type", 0) in range(70, 90)]
     loaded_outbound = [v for v in tankers if v.get("is_loaded") and v.get("direction") == "outbound"]
     ballast_inbound = [v for v in tankers if not v.get("is_loaded") and v.get("direction") == "inbound"]
-    
-    total_dwt_outbound = sum(v.get("dwt", 0) or 0 for v in loaded_outbound)
-    io_ratio = (len(loaded_outbound) / len(ballast_inbound)) if len(ballast_inbound) > 0 else 1.0
+
+    # If live data is available, use it
+    if len(tankers) > 0:
+        strait_status = {
+            "vessels_tracked": len(vessels),
+            "tankers_active": len(tankers),
+            "loaded_tankers": len(loaded_outbound),
+            "ballast_tankers": len(ballast_inbound),
+            "total_dwt_outbound": sum(v.get("dwt", 0) or 0 for v in loaded_outbound),
+            "inbound_outbound_ratio": (len(loaded_outbound) / len(ballast_inbound)) if len(ballast_inbound) > 0 else 1.0,
+            "source": "live",
+        }
+    else:
+        # Cold boot fallback — serve last cached daily summary from DB
+        with SessionLocal() as db:
+            summary = db.query(DailyTransitSummary).order_by(desc(DailyTransitSummary.date)).first()
+        if summary:
+            strait_status = {
+                "vessels_tracked": summary.total_vessels or 0,
+                "tankers_active": summary.tanker_count or 0,
+                "loaded_tankers": summary.loaded_count or 0,
+                "ballast_tankers": summary.ballast_count or 0,
+                "total_dwt_outbound": summary.total_dwt_outbound or 0,
+                "inbound_outbound_ratio": (summary.loaded_count / summary.ballast_count) if summary.ballast_count else 1.0,
+                "source": "cached",
+                "cached_date": summary.date,
+            }
+        else:
+            strait_status = {
+                "vessels_tracked": 0,
+                "tankers_active": 0,
+                "loaded_tankers": 0,
+                "ballast_tankers": 0,
+                "total_dwt_outbound": 0,
+                "inbound_outbound_ratio": 1.0,
+                "source": "no_data",
+            }
 
     oil_prices = await get_latest_prices()
     baseline = await fetch_hormuz_flow()
@@ -139,14 +179,7 @@ async def overview():
     stream = get_stream_status()
 
     return {
-        "strait_status": {
-            "vessels_tracked": len(vessels),
-            "tankers_active": len(tankers),
-            "loaded_tankers": len(loaded_outbound),
-            "ballast_tankers": len(ballast_inbound),
-            "total_dwt_outbound": total_dwt_outbound,
-            "inbound_outbound_ratio": io_ratio,
-        },
+        "strait_status": strait_status,
         "oil_flow": {
             "eia_baseline_mbpd": baseline["baseline_mbpd"],
             "key_exporters": baseline["key_exporters"],

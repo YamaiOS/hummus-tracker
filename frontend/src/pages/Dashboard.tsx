@@ -38,8 +38,11 @@ export default function Dashboard() {
   const stream = data?.ais_stream
   const baseline = data?.oil_flow
 
+  const isCached = strait?.source === 'cached'
+
   const getStatusLabel = () => {
     if (!stream) return 'Connecting'
+    if (isCached) return `Cached (${strait?.cached_date})`
     if (stream.mode === 'mock') return 'Simulated Data'
     if (stream.connected) return 'AIS Live'
     return 'Reconnecting'
@@ -47,6 +50,7 @@ export default function Dashboard() {
 
   const getStatusColor = () => {
     if (!stream) return 'bg-petro-gold'
+    if (isCached) return 'bg-petro-gold'
     if (stream.mode === 'mock') return 'bg-petro-gold'
     if (stream.connected) return 'bg-petro-teal animate-pulse'
     return 'bg-petro-red'
