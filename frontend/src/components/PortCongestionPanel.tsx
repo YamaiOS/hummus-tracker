@@ -27,7 +27,7 @@ export default function PortCongestionPanel() {
 
   return (
     <div className="space-y-4">
-      <div className="h-64 w-full bg-petro-bg/30 rounded-md p-2 border border-petro-border">
+      <div className="h-64 w-full bg-petro-bg rounded-md p-2 border border-petro-border">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart 
             data={sortedData} 

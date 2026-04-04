@@ -73,6 +73,7 @@ export default function TopDestinations() {
   const sorted = Object.entries(regionMap)
     .map(([region, stats]) => ({ region, ...stats }))
     .sort((a, b) => b.barrels - a.barrels)
+    .slice(0, 6)
 
   const maxBarrels = Math.max(...sorted.map(s => s.barrels), 1)
 
@@ -85,7 +86,7 @@ export default function TopDestinations() {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 max-h-[320px] overflow-y-auto">
       {sorted.map((item) => (
         <div key={item.region} className="space-y-1">
           <div className="flex justify-between items-end">

@@ -45,7 +45,7 @@ export default function FujairahInventoryPanel() {
         </div>
       )}
 
-      <div className="h-48 w-full bg-petro-bg/30 rounded-md p-2 border border-petro-border">
+      <div className="h-48 w-full bg-petro-bg rounded-md p-2 border border-petro-border">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1c2e4a" vertical={false} />

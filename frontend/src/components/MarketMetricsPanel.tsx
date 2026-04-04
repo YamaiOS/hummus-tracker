@@ -67,7 +67,7 @@ export default function MarketMetricsPanel() {
 
       <div className="space-y-2">
         <p className="text-[11px] font-bold text-text-faint uppercase tracking-wide px-1">Forward Curve Structure</p>
-        <div className="h-48 w-full bg-petro-bg/30 rounded-md p-2 border border-petro-border">
+        <div className="h-48 w-full bg-petro-bg rounded-md p-2 border border-petro-border">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={curveData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1c2e4a" vertical={false} />
@@ -85,29 +85,31 @@ export default function MarketMetricsPanel() {
         </div>
       </div>
 
-      <div className="space-y-2">
-        <p className="text-[11px] font-bold text-text-faint uppercase tracking-wide px-1">90-Day EFS Time-Series</p>
-        <div className="h-32 w-full bg-petro-bg/30 rounded-md p-2 border border-petro-border">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={historyData?.history || []} margin={{ top: 5, right: 5, left: -30, bottom: 0 }}>
-              <defs>
-                <linearGradient id="colorEfs" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#00a19c" stopOpacity={0.2}/>
-                  <stop offset="95%" stopColor="#00a19c" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1c2e4a" vertical={false} />
-              <XAxis dataKey="date" hide />
-              <YAxis stroke="#566b8a" fontSize={10} tickLine={false} axisLine={false} domain={['auto', 'auto']} />
-              <Tooltip 
-                contentStyle={{ backgroundColor: '#0f1d32', border: '1px solid #1c2e4a', fontSize: '11px', borderRadius: '4px' }}
-                itemStyle={{ fontSize: '11px' }}
-              />
-              <Area type="monotone" dataKey="efs" stroke="#00a19c" fillOpacity={1} fill="url(#colorEfs)" strokeWidth={2} />
-            </AreaChart>
-          </ResponsiveContainer>
+      {(historyData?.history?.length ?? 0) > 1 && (
+        <div className="space-y-2">
+          <p className="text-[11px] font-bold text-text-faint uppercase tracking-wide px-1">90-Day EFS Time-Series</p>
+          <div className="h-32 w-full bg-petro-bg rounded-md p-2 border border-petro-border">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={historyData.history} margin={{ top: 5, right: 5, left: -30, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorEfs" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#00a19c" stopOpacity={0.2}/>
+                    <stop offset="95%" stopColor="#00a19c" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1c2e4a" vertical={false} />
+                <XAxis dataKey="date" hide />
+                <YAxis stroke="#566b8a" fontSize={11} tickLine={false} axisLine={false} domain={['auto', 'auto']} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#0f1d32', border: '1px solid #1c2e4a', fontSize: '11px', borderRadius: '4px' }}
+                  itemStyle={{ fontSize: '11px' }}
+                />
+                <Area type="monotone" dataKey="efs" stroke="#00a19c" fillOpacity={1} fill="url(#colorEfs)" strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
