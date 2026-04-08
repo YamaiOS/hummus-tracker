@@ -53,6 +53,7 @@ export default function OPECCompliancePanel() {
             {compliance.map((c) => {
               const over = c.delta > 0.1 && !c.is_exempt
               const under = c.delta < -0.1 && !c.is_exempt
+              const suppress = (isMock || hasInsufficientData) && !c.is_exempt
               return (
                 <tr key={c.country} className="hover:bg-petro-card-hover transition-colors">
                   <td className="py-3 px-1 font-sans font-bold text-text-warm uppercase text-xs">
@@ -62,14 +63,14 @@ export default function OPECCompliancePanel() {
                     {c.is_exempt ? 'EXEMPT' : c.quota_mbpd.toFixed(2)}
                   </td>
                   <td className="py-3 px-1 text-right text-text-warm font-bold">
-                    {c.observed_mbpd.toFixed(2)}
+                    {suppress ? <span className="text-text-faint">N/A</span> : c.observed_mbpd.toFixed(2)}
                   </td>
                   <td className={`py-3 px-1 text-right font-bold ${
-                    c.is_exempt ? 'text-text-faint' : 
-                    over ? 'text-petro-red' : 
+                    suppress || c.is_exempt ? 'text-text-faint' :
+                    over ? 'text-petro-red' :
                     under ? 'text-petro-green' : 'text-text-faint'
                   }`}>
-                    {c.is_exempt ? '—' : `${c.delta > 0 ? '+' : ''}${c.delta.toFixed(2)}`}
+                    {suppress || c.is_exempt ? '—' : `${c.delta > 0 ? '+' : ''}${c.delta.toFixed(2)}`}
                   </td>
                 </tr>
               )

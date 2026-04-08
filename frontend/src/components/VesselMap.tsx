@@ -86,7 +86,7 @@ export default function VesselMap() {
   const floatingStorage = storageData?.vessels ?? []
 
   return (
-    <div className="h-full min-h-[400px] w-full rounded-lg overflow-hidden relative border border-petro-border">
+    <div className="h-[480px] w-full rounded-lg overflow-hidden relative border border-petro-border">
       {isLoading && (
         <div className="absolute inset-0 z-[1000] flex items-center justify-center bg-petro-bg/80">
           <p className="text-sm text-text-muted">Loading positions...</p>
@@ -95,8 +95,8 @@ export default function VesselMap() {
       <MapContainer
         center={HORMUZ_CENTER}
         zoom={7}
-        className="h-full w-full"
-        style={{ background: '#0a1628' }}
+        zoomControl={false}
+        style={{ background: '#0a1628', height: '100%', width: '100%' }}
       >
         <TileLayer
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"

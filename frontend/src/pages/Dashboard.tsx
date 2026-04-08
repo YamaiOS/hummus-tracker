@@ -23,7 +23,7 @@ import DailyFlowTrend from '../components/DailyFlowTrend'
 import VesselClassBreakdown from '../components/VesselClassBreakdown'
 import BunkerPricesPanel from '../components/BunkerPricesPanel'
 import WeatherAlertsPanel from '../components/WeatherAlertsPanel'
-import { fetchOverview } from '../api/client'
+import { fetchOverview, fetchFlowEstimate } from '../api/client'
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<'ops' | 'market' | 'analytics'>('ops')
@@ -33,10 +33,17 @@ export default function Dashboard() {
     refetchInterval: 60_000,
   })
 
+  const { data: flowEstimate } = useQuery({
+    queryKey: ['flowEstimate'],
+    queryFn: fetchFlowEstimate,
+    refetchInterval: 60_000,
+  })
+
   const strait = data?.strait_status
   const prices = data?.oil_prices
   const stream = data?.ais_stream
   const baseline = data?.oil_flow
+  const observedFlow = flowEstimate?.estimated_mbpd as number | undefined
 
   const isCached = strait?.source === 'cached'
 
@@ -155,12 +162,13 @@ export default function Dashboard() {
           <KPICard label="Active Tankers" value={strait?.tankers_active ?? 0} loading={isLoading} />
           <KPICard label="Loaded (Out)" value={strait?.loaded_tankers ?? 0} loading={isLoading} />
           <KPICard label="Ballast (In)" value={strait?.ballast_tankers ?? 0} loading={isLoading} />
-          <KPICard 
-            label="Flow (mbpd)" 
-            value={baseline?.eia_baseline_mbpd ?? 20.0} 
-            loading={isLoading} 
-            suffix=" mbpd" 
+          <KPICard
+            label="Flow (mbpd)"
+            value={observedFlow !== undefined ? observedFlow.toFixed(1) : '—'}
+            loading={isLoading}
+            suffix=" mbpd"
             simulated={stream?.mode === 'mock'}
+            sublabel={`vs ${(baseline?.eia_baseline_mbpd ?? 20.0).toFixed(1)} baseline`}
           />
           <KPICard 
             label="DWT Throughput" 
@@ -173,7 +181,7 @@ export default function Dashboard() {
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex items-center gap-1 p-1 bg-petro-card border border-petro-border rounded-lg w-fit">
+        <div className="flex items-center gap-1 p-1 bg-petro-card border border-petro-border rounded-lg w-full sm:w-fit">
           <TabButton 
             active={activeTab === 'ops'} 
             onClick={() => setActiveTab('ops')} 
@@ -339,9 +347,9 @@ function TabButton({
     <button
       onClick={onClick}
       className={`
-        flex items-center gap-2 px-4 py-2 rounded text-xs font-bold transition-all tracking-wide
-        ${active 
-          ? 'bg-petro-border text-petro-teal shadow-none' 
+        flex items-center justify-center gap-2 px-3 sm:px-4 py-3 min-h-[44px] rounded text-xs font-bold transition-all tracking-wide flex-1 sm:flex-initial
+        ${active
+          ? 'bg-petro-border text-petro-teal shadow-none'
           : 'text-text-muted hover:text-text-warm hover:bg-petro-card-hover'}
       `}
     >
@@ -352,13 +360,14 @@ function TabButton({
 }
 
 function KPICard({
-  label, value, loading, suffix = '', simulated = false
+  label, value, loading, suffix = '', simulated = false, sublabel
 }: {
   label: string
   value: number | string
   loading: boolean
   suffix?: string
   simulated?: boolean
+  sublabel?: string
 }) {
   return (
     <div className="bg-petro-card border border-petro-border rounded-lg px-4 py-4 relative">
@@ -373,12 +382,17 @@ function KPICard({
       {loading ? (
         <p className="text-xs text-text-faint">Loading...</p>
       ) : (
-        <p className="text-2xl font-mono font-bold text-text-warm leading-none">
-          {typeof value === 'number' ? value.toLocaleString() : value}
-          <span className="text-xs text-text-faint font-normal ml-1 lowercase">
-            {suffix}
-          </span>
-        </p>
+        <>
+          <p className="text-2xl font-mono font-bold text-text-warm leading-none">
+            {typeof value === 'number' ? value.toLocaleString() : value}
+            <span className="text-xs text-text-faint font-normal ml-1 lowercase">
+              {suffix}
+            </span>
+          </p>
+          {sublabel && (
+            <p className="text-[11px] text-text-faint font-mono mt-1">{sublabel}</p>
+          )}
+        </>
       )}
     </div>
   )
