@@ -35,6 +35,29 @@ const createIcon = (icon: React.ReactNode, color: string) => {
   })
 }
 
+/** Returns a rotated vessel arrow icon. course is in degrees (0=North, clockwise). */
+function createVesselIcon(color: string, course: number, sizePx: number) {
+  // SVG: arrow pointing up (north = 0°), rotated by course degrees
+  const half = sizePx / 2
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${sizePx}" height="${sizePx}" viewBox="0 0 ${sizePx} ${sizePx}">
+    <g transform="rotate(${course}, ${half}, ${half})">
+      <polygon
+        points="${half},2 ${sizePx - 3},${sizePx - 2} ${half},${sizePx - 6} 3,${sizePx - 2}"
+        fill="${color}"
+        fill-opacity="0.9"
+        stroke="#0a1628"
+        stroke-width="0.8"
+      />
+    </g>
+  </svg>`
+  return L.divIcon({
+    html: svg,
+    className: 'vessel-arrow-icon',
+    iconSize: [sizePx, sizePx],
+    iconAnchor: [half, half],
+  })
+}
+
 function vesselColor(v: Vessel) {
   if (v.is_loaded) return '#c4a35a' // --accent-gold for loaded outbound
   if (v.direction === 'inbound') return '#566b8a' // --text-tertiary for ballast
@@ -47,6 +70,15 @@ function vesselRadius(v: Vessel) {
   if (barrels > 800_000) return 6  // Suezmax
   if (barrels > 400_000) return 5  // Aframax
   return 4
+}
+
+/** Icon pixel size for rotated vessel arrow, scaled by vessel size. */
+function vesselIconSize(v: Vessel): number {
+  const barrels = v.estimated_barrels ?? 0
+  if (barrels > 1_500_000) return 22 // VLCC
+  if (barrels > 800_000) return 18   // Suezmax
+  if (barrels > 400_000) return 16   // Aframax
+  return 14
 }
 
 export default function VesselMap() {
@@ -162,40 +194,88 @@ export default function VesselMap() {
           </Marker>
         ))}
 
-        {vessels.map((v) => (
-          <CircleMarker
-            key={v.mmsi}
-            center={[v.lat, v.lon]}
-            radius={vesselRadius(v)}
-            pathOptions={{
-              color: vesselColor(v),
-              fillColor: vesselColor(v),
-              fillOpacity: 0.8,
-              weight: 1,
-            }}
-          >
-            <Popup>
-              <div className="text-[13px] font-sans space-y-1 min-w-[180px] p-1">
-                <p className="font-bold text-text-warm border-b border-petro-border pb-1 mb-1">
-                  {v.name || v.mmsi}
-                </p>
-                <div className="grid grid-cols-2 gap-x-2 font-mono text-[11px] text-text-muted">
-                  <span>CLASS:</span> <span className="text-text-warm">{v.vessel_class}</span>
-                  <span>FLAG:</span> <span className="text-text-warm">{v.flag}</span>
-                  <span>SPEED:</span> <span className="text-text-warm">{v.speed?.toFixed(1)}kt</span>
-                  <span>LOAD:</span> <span className={v.is_loaded ? 'text-petro-teal' : 'text-text-faint'}>
-                    {v.is_loaded ? 'LOADED' : 'BALLAST'}
-                  </span>
+        {vessels.map((v) => {
+          // Use heading if available and valid, otherwise fall back to course
+          const bearing = (v as any).heading != null && (v as any).heading !== 511
+            ? (v as any).heading as number
+            : (v.course ?? 0)
+          const color = vesselColor(v)
+          const iconSize = vesselIconSize(v)
+          const icon = createVesselIcon(color, bearing, iconSize)
+
+          return (
+            <Marker
+              key={v.mmsi}
+              position={[v.lat, v.lon]}
+              icon={icon}
+            >
+              <Popup>
+                <div className="text-[13px] font-sans space-y-1 min-w-[200px] p-1">
+                  {/* Header: name + MMSI */}
+                  <div className="border-b border-petro-border pb-1 mb-2">
+                    <p className="font-bold text-text-warm leading-tight">
+                      {v.name ? v.name : '(UNKNOWN)'}
+                    </p>
+                    <p className="font-mono text-[10px] text-text-muted tracking-widest">
+                      MMSI {v.mmsi}
+                    </p>
+                  </div>
+
+                  {/* Core fields */}
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-[3px] font-mono text-[11px]">
+                    <span className="text-text-muted">CLASS</span>
+                    <span className="text-text-warm">{v.vessel_class ?? '—'}</span>
+
+                    <span className="text-text-muted">FLAG</span>
+                    <span className="text-text-warm">{v.flag ?? '—'}</span>
+
+                    <span className="text-text-muted">DEST</span>
+                    <span className="text-text-warm truncate" title={v.destination}>{v.destination ?? '—'}</span>
+
+                    <span className="text-text-muted">DIRECTION</span>
+                    <span className="text-text-warm">{v.direction ? v.direction.toUpperCase() : '—'}</span>
+
+                    <span className="text-text-muted">STATUS</span>
+                    <span className={v.is_loaded ? 'text-[#c4a35a] font-bold' : 'text-[#566b8a]'}>
+                      {v.is_loaded ? 'LOADED' : 'BALLAST'}
+                    </span>
+
+                    {(v.estimated_barrels ?? 0) > 0 && (
+                      <>
+                        <span className="text-text-muted">CARGO</span>
+                        <span className="text-[#00a19c] font-bold">
+                          {((v.estimated_barrels ?? 0) / 1_000_000).toFixed(2)}M BBL
+                        </span>
+                      </>
+                    )}
+
+                    {v.crude_grade && (
+                      <>
+                        <span className="text-text-muted">GRADE</span>
+                        <span className="text-text-warm">{v.crude_grade}</span>
+                      </>
+                    )}
+
+                    <span className="text-text-muted">SPEED</span>
+                    <span className="text-text-warm">
+                      {v.speed != null ? `${v.speed.toFixed(1)} kt` : '—'}
+                    </span>
+
+                    <span className="text-text-muted">COG</span>
+                    <span className="text-text-warm">{v.course != null ? `${Math.round(v.course)}°` : '—'}</span>
+
+                    {(v.dwell_hours ?? 0) > 0 && (
+                      <>
+                        <span className="text-text-muted">DWELL</span>
+                        <span className="text-text-warm">{(v.dwell_hours ?? 0).toFixed(1)} h</span>
+                      </>
+                    )}
+                  </div>
                 </div>
-                {v.estimated_barrels && v.estimated_barrels > 0 && (
-                  <p className="text-[11px] font-bold text-petro-teal pt-1">
-                    CARGO: {(v.estimated_barrels / 1_000_000).toFixed(2)}M BBL
-                  </p>
-                )}
-              </div>
-            </Popup>
-          </CircleMarker>
-        ))}
+              </Popup>
+            </Marker>
+          )
+        })}
       </MapContainer>
 
       {/* Legend — Bloomberg Style */}
