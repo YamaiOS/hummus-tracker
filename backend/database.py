@@ -1,6 +1,7 @@
 """Database setup for Hummus Tracker."""
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from sqlalchemy import create_engine, event
@@ -8,7 +9,10 @@ from sqlalchemy.orm import sessionmaker
 
 from .models import Base, DisruptionEvent
 
-_DB_PATH = Path(__file__).parent.parent / "data" / "hummus.db"
+# DATA_DIR lets us point the DB at a persistent Fly volume (e.g. /data) so it
+# survives machine stop under scale-to-zero. Defaults to the repo for local dev.
+_DATA_DIR = Path(os.getenv("DATA_DIR") or (Path(__file__).parent.parent / "data"))
+_DB_PATH = _DATA_DIR / "hummus.db"
 _DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 engine = create_engine(

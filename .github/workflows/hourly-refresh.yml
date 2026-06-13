@@ -1,0 +1,27 @@
+name: hourly-refresh
+
+# Drives the Hummus Tracker data refresh without an always-on machine.
+# Hits the token-protected refresh endpoint, which wakes the scale-to-zero
+# Fly machine, regenerates the hourly snapshot onto the persistent volume,
+# then lets the machine idle back to sleep.
+on:
+  schedule:
+    - cron: '0 * * * *'   # top of every hour (UTC); GitHub may delay a few minutes
+  workflow_dispatch: {}     # allow manual runs from the Actions tab
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Trigger snapshot refresh
+        run: |
+          set -e
+          code=$(curl -s -o /tmp/resp.json -w "%{http_code}" -X POST \
+            -H "X-Refresh-Token: ${{ secrets.REFRESH_TOKEN }}" \
+            --max-time 600 --retry 2 --retry-delay 10 \
+            https://oil.yieldwise.my/api/internal/refresh)
+          echo "HTTP $code"
+          cat /tmp/resp.json 2>/dev/null || true
+          echo
+          test "$code" = "200"

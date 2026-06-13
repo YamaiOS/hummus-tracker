@@ -29,7 +29,10 @@ load_dotenv(Path(__file__).parent.parent / ".env")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [Snapshot] %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
-SNAPSHOT_DIR = Path(__file__).parent.parent / "snapshots"
+# Written under the persistent volume (DATA_DIR, e.g. /data on Fly) so snapshots
+# survive machine stop under scale-to-zero; falls back to the repo for local dev.
+_DATA_DIR = Path(os.getenv("DATA_DIR") or (Path(__file__).parent.parent))
+SNAPSHOT_DIR = _DATA_DIR / "snapshots"
 
 # How long to listen to the AIS stream each run (seconds). Bounded so this is a
 # batch job, not an always-on consumer. Override with AIS_SAMPLE_SECONDS.
