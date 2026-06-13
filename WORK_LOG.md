@@ -47,3 +47,37 @@ Transform a basic AIS vessel tracker into a **Strategic Maritime Intelligence Da
 - **Historical Flow Trendlines**: 30/60/90 day throughput charts.
 - **Strait Status Timer**: Top-level strategic alert levels (OPEN / RESTRICTED / CLOSED).
 - **Satellite Data Integration**: Mocking satellite AIS vs Terrestrial AIS gaps.
+
+---
+
+## 2026-06-13 — Architecture Migration + Frontend Enhancement Rounds
+
+### Backend: Snapshot + Static-Serve Model
+
+Replaced the always-on AIS websocket and multi-job APScheduler in the serving process with a two-process architecture:
+
+**`backend/snapshot.py` — hourly batch job**
+- Seeds the DB, samples the AIS stream for a bounded window (`AIS_SAMPLE_SECONDS`, default 75 s), runs all aggregation and detection jobs, and evaluates threshold alerts (Shamal wind, dark vessels, low strait flow vs EIA baseline, STS transfers).
+- Calls every frontend API endpoint in-process via ASGI (httpx `ASGITransport` against `backend.main:app`) and dumps the JSON responses to `snapshots/*.json`.
+
+**`backend/serve.py` — lightweight static server**
+- Serves `snapshots/*.json` for all `/api/...` requests (query strings ignored — the snapshot bakes the widest superset of params) and the compiled SPA.
+- On first boot triggers the initial snapshot as a background subprocess. Re-runs it hourly via an in-process APScheduler job. No live external calls at request time, so a heavy refresh can never stall request handling.
+
+**`backend/main.py`** remains as the full FastAPI app whose endpoint shapes `snapshot.py` calls; it is no longer the serving entrypoint.
+
+**`entrypoint.sh`** now starts `uvicorn backend.serve:app`.
+
+**`fly.toml`**: app name corrected to `hummus-tracker` (was `hummus-trackerz`), `min_machines_running = 1`, `auto_stop_machines = "suspend"` — keeps the machine alive so the hourly scheduler fires. Live at https://hummus-tracker.fly.dev.
+
+### Frontend Enhancement Rounds
+
+**Self-hosted assets**: Fonts and Leaflet CSS are now bundled locally — no CDN dependencies at runtime.
+
+**DataFreshnessBadge**: New component displayed in the dashboard header showing how long ago the last snapshot ran ("updated Xm ago"), so users know data currency at a glance.
+
+**Code splitting**: Tabs are lazy-loaded from `src/pages/tabs/*` with vendor chunk splitting, reducing initial bundle size.
+
+**Vessel map**: Markers now render heading arrows indicating vessel bearing. Click popups show rich vessel detail (name, flag, class, destination, load status, coordinates).
+
+**Global ErrorBoundary**: Wraps the app to catch and display React rendering errors gracefully rather than a blank screen.

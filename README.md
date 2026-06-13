@@ -13,14 +13,12 @@ Hummus Tracker is a high-fidelity, real-time AIS vessel tracking and economic fa
 
 ## Architecture
 
--   **Backend**: Python / FastAPI
-    -   Real-time WebSocket pipeline with automated **Mock Fallback** for 100% uptime.
-    -   Data integration: FRED (Oil Prices), EIA (Baselines), IMF PortWatch (Satellite AIS).
-    -   Background task scheduling for daily data aggregation and correlation.
--   **Frontend**: React / TypeScript / Vite
-    -   High-density dashboard with Tailwind CSS.
-    -   Geographic visualization via Leaflet.
-    -   Real-time state management with React Query.
+The backend uses a **snapshot + static-serve** model — no always-on AIS websocket, no multi-job scheduler in the serving process.
+
+-   **`backend/snapshot.py`** — Hourly batch job. Seeds the DB, samples the AIS stream for a bounded window (`AIS_SAMPLE_SECONDS`, default 75 s), runs all aggregation and detection jobs, evaluates threshold alerts (Shamal wind, dark vessels, low strait flow vs EIA baseline, STS transfers), then calls every frontend API endpoint in-process via ASGI and dumps the JSON responses to `snapshots/*.json`.
+-   **`backend/serve.py`** — Lightweight static server. Serves `snapshots/*.json` for `/api/...` requests (query strings ignored) and the compiled SPA. Triggers the first snapshot in a background subprocess on boot, then re-runs it hourly. No live external calls at request time.
+-   **`backend/main.py`** — Full FastAPI app. Still exists to define endpoint shapes; imported by `snapshot.py` for the in-process ASGI calls. No longer the serving entrypoint.
+-   **Frontend**: React / TypeScript / Vite — self-hosted fonts and Leaflet CSS (no CDN), code-split lazy tabs, vessel map with heading arrows and rich click popups, `DataFreshnessBadge` showing when the last snapshot ran, global `ErrorBoundary`.
 
 ## Getting Started
 
@@ -30,8 +28,21 @@ Hummus Tracker is a high-fidelity, real-time AIS vessel tracking and economic fa
 - API Keys (see `.env.example`): `AISSTREAM_API_KEY`, `FRED_API_KEY`, `EIA_API_KEY`.
 
 ### Installation & Run
-1. **Backend**: `pip install -r requirements.txt` -> `PYTHONPATH=. uvicorn backend.main:app --port 8888`
-2. **Frontend**: `npm install` -> `npm run dev`
+1. **Install deps**: `pip install -r requirements.txt` / `npm install`
+2. **Generate a snapshot** (seeds DB, samples AIS, writes `snapshots/*.json`):
+   ```
+   python -m backend.snapshot
+   ```
+3. **Serve** (static API files + SPA, hourly snapshot auto-fires):
+   ```
+   PYTHONPATH=. uvicorn backend.serve:app --port 8888
+   ```
+4. **Frontend dev**: `npm run dev`
+
+### Deploy (Fly.io)
+App name: **hummus-tracker** — live at **https://hummus-tracker.fly.dev**
+
+`entrypoint.sh` starts `uvicorn backend.serve:app`. `fly.toml` sets `min_machines_running = 1` and `auto_stop_machines = "suspend"` so the machine is never fully stopped — this keeps the in-process hourly scheduler firing. Region: `sin`.
 
 ---
 *For a detailed history of technical implementations and logic fixes, see **[WORK_LOG.md](./WORK_LOG.md)**.*
