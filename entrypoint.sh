@@ -1,8 +1,6 @@
 #!/bin/sh
-# Generate an initial snapshot before serving so the dashboard is never blank,
-# then hand off to the lightweight static server (which refreshes hourly).
-set -e
-echo "[entrypoint] Generating initial snapshot..."
-python -m backend.snapshot || echo "[entrypoint] initial snapshot failed — serving will retry on schedule"
-echo "[entrypoint] Starting static server..."
+# Start the lightweight server immediately so the machine is reachable on :8080
+# right away. serve.py's lifespan kicks off the initial snapshot in the
+# background (and refreshes hourly), so the dashboard returns 503 only briefly
+# on a cold first boot, then fills in once the first snapshot completes.
 exec uvicorn backend.serve:app --host 0.0.0.0 --port 8080

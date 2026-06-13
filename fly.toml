@@ -1,4 +1,4 @@
-app = "hummus-trackerz"
+app = "hummus-tracker"
 primary_region = "sin"
 
 [build]
