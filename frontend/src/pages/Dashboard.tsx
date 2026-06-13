@@ -23,6 +23,7 @@ import DailyFlowTrend from '../components/DailyFlowTrend'
 import VesselClassBreakdown from '../components/VesselClassBreakdown'
 import BunkerPricesPanel from '../components/BunkerPricesPanel'
 import WeatherAlertsPanel from '../components/WeatherAlertsPanel'
+import DataFreshnessBadge from '../components/DataFreshnessBadge'
 import { fetchOverview, fetchFlowEstimate } from '../api/client'
 
 export default function Dashboard() {
@@ -121,6 +122,8 @@ export default function Dashboard() {
                 </span>
               </div>
             )}
+
+            <DataFreshnessBadge />
 
             <div className="flex items-center gap-2">
               <span className={`w-1.5 h-1.5 rounded-full ${getStatusColor()}`} />

@@ -358,3 +358,16 @@ export const fetchFlowEstimate = () =>
 
 export const fetchBaseline = () =>
   api.get<Record<string, any>>('/flow/baseline').then(r => r.data)
+
+export interface HealthResponse {
+  status: string
+  service: string
+  snapshot: {
+    generated_at?: string
+    endpoints_written?: number
+    ais_sample_seconds?: number
+  }
+}
+
+export const fetchHealth = () =>
+  api.get<HealthResponse>('/health').then(r => r.data)

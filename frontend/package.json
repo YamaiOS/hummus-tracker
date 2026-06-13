@@ -9,20 +9,22 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.2.8",
+    "@fontsource/jetbrains-mono": "^5.2.8",
+    "@tanstack/react-query": "^5.24.0",
+    "axios": "^1.6.7",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.344.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.22.0",
-    "axios": "^1.6.7",
-    "@tanstack/react-query": "^5.24.0",
-    "leaflet": "^1.9.4",
     "react-leaflet": "^4.2.1",
-    "recharts": "^2.12.0",
-    "lucide-react": "^0.344.0"
+    "react-router-dom": "^6.22.0",
+    "recharts": "^2.12.0"
   },
   "devDependencies": {
+    "@types/leaflet": "^1.9.8",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
-    "@types/leaflet": "^1.9.8",
     "@vitejs/plugin-react": "^4.2.0",
     "autoprefixer": "^10.4.17",
     "postcss": "^8.4.35",

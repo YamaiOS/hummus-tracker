@@ -159,11 +159,130 @@ async def _dump_endpoints() -> int:
     return written
 
 
+async def _evaluate_alerts() -> None:
+    """Evaluate threshold conditions against just-written snapshot JSONs and fire alerts.
+
+    Each check is wrapped in its own try/except so one bad read never aborts the others.
+    unique_id is keyed by date+condition for per-day deduplication via the cooldown cache.
+    """
+    from .services.alerts import send_alert
+    from .services.activity import log_activity
+
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    logger.info("Evaluating alert thresholds...")
+
+    # ── 1. Shamal wind shutdown risk ─────────────────────────────────────────
+    try:
+        weather_path = SNAPSHOT_DIR / "weather__latest.json"
+        if weather_path.exists():
+            terminals: list[dict] = json.loads(weather_path.read_text())
+            for t in terminals:
+                name = t.get("terminal_name", "Unknown terminal")
+                wind = t.get("wind_speed_knots") or 0
+                alert_active = t.get("is_alert_active", False)
+                if wind >= 30 or alert_active:
+                    uid = f"{today}:shamal:{name}"
+                    msg = (
+                        f"Shamal wind shutdown risk at {name}: "
+                        f"{wind:.1f} kn wind speed"
+                        + (" (alert active)" if alert_active else "")
+                    )
+                    await send_alert("shamal_wind", msg, unique_id=uid, severity="critical")
+                    log_activity("shamal_wind", msg, severity="critical",
+                                 metadata={"terminal": name, "wind_speed_knots": wind})
+                    logger.warning("ALERT [shamal_wind] %s", msg)
+        else:
+            logger.info("weather__latest.json not found — skipping shamal check")
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Alert check failed (shamal_wind): %s", exc)
+
+    # ── 2. Dark vessels detected ──────────────────────────────────────────────
+    try:
+        dark_path = SNAPSHOT_DIR / "vessels__dark.json"
+        if dark_path.exists():
+            dark_data: dict = json.loads(dark_path.read_text())
+            dark_count = dark_data.get("count", 0)
+            if dark_count > 0:
+                uid = f"{today}:dark_vessels"
+                msg = f"{dark_count} dark vessel(s) detected in the Strait of Hormuz region"
+                await send_alert("dark_vessels", msg, unique_id=uid, severity="warning")
+                log_activity("dark_vessels", msg, severity="warning",
+                             metadata={"count": dark_count})
+                logger.warning("ALERT [dark_vessels] %s", msg)
+            else:
+                logger.info("Alert check ok (dark_vessels): count=0")
+        else:
+            logger.info("vessels__dark.json not found — skipping dark vessel check")
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Alert check failed (dark_vessels): %s", exc)
+
+    # ── 3. Low strait flow vs EIA baseline ───────────────────────────────────
+    try:
+        flow_path = SNAPSHOT_DIR / "flow__estimate.json"
+        if flow_path.exists():
+            flow: dict = json.loads(flow_path.read_text())
+            estimated = flow.get("estimated_mbpd") or 0.0
+            baseline = flow.get("eia_baseline_mbpd") or 0.0
+            if baseline > 0:
+                pct = (estimated / baseline) * 100
+                if pct < 85:
+                    uid = f"{today}:strait_flow:critical"
+                    msg = (
+                        f"CRITICAL: Strait flow at {pct:.1f}% of EIA baseline "
+                        f"({estimated:.2f} mbpd vs {baseline:.1f} mbpd baseline)"
+                    )
+                    await send_alert("strait_flow", msg, unique_id=uid, severity="critical")
+                    log_activity("strait_flow", msg, severity="critical",
+                                 metadata={"estimated_mbpd": estimated, "baseline_mbpd": baseline, "pct": round(pct, 1)})
+                    logger.warning("ALERT [strait_flow/critical] %s", msg)
+                elif pct < 92:
+                    uid = f"{today}:strait_flow:warning"
+                    msg = (
+                        f"WARNING: Strait flow at {pct:.1f}% of EIA baseline "
+                        f"({estimated:.2f} mbpd vs {baseline:.1f} mbpd baseline)"
+                    )
+                    await send_alert("strait_flow", msg, unique_id=uid, severity="warning")
+                    log_activity("strait_flow", msg, severity="warning",
+                                 metadata={"estimated_mbpd": estimated, "baseline_mbpd": baseline, "pct": round(pct, 1)})
+                    logger.warning("ALERT [strait_flow/warning] %s", msg)
+                else:
+                    logger.info("Alert check ok (strait_flow): %.1f%% of baseline", pct)
+            else:
+                logger.info("strait flow baseline is zero — skipping flow check")
+        else:
+            logger.info("flow__estimate.json not found — skipping flow check")
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Alert check failed (strait_flow): %s", exc)
+
+    # ── 4. Active STS events ─────────────────────────────────────────────────
+    try:
+        sts_path = SNAPSHOT_DIR / "vessels__sts.json"
+        if sts_path.exists():
+            sts_data: dict = json.loads(sts_path.read_text())
+            sts_count = sts_data.get("count", 0)
+            if sts_count > 0:
+                uid = f"{today}:sts_events"
+                msg = f"{sts_count} active ship-to-ship (STS) transfer event(s) detected"
+                await send_alert("sts_events", msg, unique_id=uid, severity="warning")
+                log_activity("sts_events", msg, severity="warning",
+                             metadata={"count": sts_count})
+                logger.info("ALERT [sts_events] %s", msg)
+            else:
+                logger.info("Alert check ok (sts_events): count=0")
+        else:
+            logger.info("vessels__sts.json not found — skipping STS check")
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Alert check failed (sts_events): %s", exc)
+
+    logger.info("Alert threshold evaluation complete.")
+
+
 async def run() -> None:
     started = datetime.now(timezone.utc)
     logger.info("=== Snapshot run starting ===")
     await _refresh_data()
     written = await _dump_endpoints()
+    await _evaluate_alerts()
 
     SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
     (SNAPSHOT_DIR / "_meta.json").write_text(json.dumps({
