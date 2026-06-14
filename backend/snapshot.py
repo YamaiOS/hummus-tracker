@@ -68,6 +68,8 @@ ENDPOINTS: list[str] = [
     "/api/congestion/latest",
     "/api/weather/latest",
     "/api/disruptions/",
+    "/api/risk-index",
+    "/api/history/series?days=90",
 ]
 
 
@@ -284,6 +286,16 @@ async def run() -> None:
     started = datetime.now(timezone.utc)
     logger.info("=== Snapshot run starting ===")
     await _refresh_data()
+
+    # Record metric history row BEFORE dumping endpoints so the series endpoint
+    # reflects the current run when it is serialised to disk.
+    try:
+        from .services.history import record_metric_snapshot
+        await record_metric_snapshot()
+        logger.info("job ok: record_metric_snapshot")
+    except Exception as _e:  # noqa: BLE001
+        logger.warning("job failed: record_metric_snapshot — %s", _e)
+
     written = await _dump_endpoints()
     await _evaluate_alerts()
 

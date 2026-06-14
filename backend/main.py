@@ -141,6 +141,20 @@ async def latest_brief():
     return await get_latest_brief()
 
 
+@app.get("/api/risk-index")
+async def risk_index():
+    """Hormuz Risk Index — transparent composite 0-100 score (higher = more risk)."""
+    from .services.risk_index import compute_risk_index
+    return await compute_risk_index()
+
+
+@app.get("/api/history/series")
+async def history_series(days: int = 30):
+    """Historical time-series of key Hormuz metrics (risk score, prices, flow, etc.)."""
+    from .services.history import get_history_series
+    return get_history_series(days=days)
+
+
 @app.get("/api/overview")
 async def overview():
     """Dashboard overview — key metrics for the Hormuz strait.

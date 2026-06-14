@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" fill="none">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0d2240"/>
+      <stop offset="100%" stop-color="#091829"/>
+    </linearGradient>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0d2240"/>
+      <stop offset="100%" stop-color="#091829"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Grid lines (terminal aesthetic) -->
+  <line x1="0" y1="315" x2="1200" y2="315" stroke="#c9a432" stroke-width="0.5" opacity="0.1"/>
+  <line x1="600" y1="0" x2="600" y2="630" stroke="#c9a432" stroke-width="0.5" opacity="0.1"/>
+
+  <!-- Decorative water/strait bands -->
+  <path d="M0 440 Q200 420 400 440 Q600 460 800 440 Q1000 420 1200 440 L1200 630 L0 630 Z" fill="#0a1c35" opacity="0.8"/>
+  <path d="M0 480 Q300 465 600 480 Q900 495 1200 480" stroke="#c9a432" stroke-width="2" fill="none" opacity="0.4"/>
+  <path d="M0 510 Q300 498 600 510 Q900 522 1200 510" stroke="#c9a432" stroke-width="1.5" fill="none" opacity="0.25"/>
+
+  <!-- Tanker silhouette (simplified, centered low) -->
+  <path d="M280 420 L920 420 L960 445 L240 445 Z" fill="#c9a432" opacity="0.85"/>
+  <!-- Superstructure -->
+  <rect x="820" y="388" width="80" height="32" rx="3" fill="#c9a432" opacity="0.9"/>
+  <!-- Funnel -->
+  <rect x="840" y="366" width="36" height="24" rx="3" fill="#c9a432"/>
+  <!-- Tank outlines -->
+  <rect x="320" y="410" width="60" height="10" rx="2" fill="#0d2240" opacity="0.5"/>
+  <rect x="410" y="410" width="60" height="10" rx="2" fill="#0d2240" opacity="0.5"/>
+  <rect x="500" y="410" width="60" height="10" rx="2" fill="#0d2240" opacity="0.5"/>
+  <rect x="590" y="410" width="60" height="10" rx="2" fill="#0d2240" opacity="0.5"/>
+  <rect x="680" y="410" width="60" height="10" rx="2" fill="#0d2240" opacity="0.5"/>
+
+  <!-- Oil drop icon -->
+  <path d="M105 160 Q105 100 145 92 Q185 92 185 155 Q185 218 145 232 Q105 218 105 160 Z" fill="#c9a432" opacity="0.9"/>
+
+  <!-- App title -->
+  <text x="210" y="175" font-family="'Courier New', Courier, monospace" font-size="82" font-weight="900" fill="#c9a432" letter-spacing="-2">HUMMUS TRACKER</text>
+
+  <!-- Tagline -->
+  <text x="210" y="230" font-family="'Courier New', Courier, monospace" font-size="28" fill="#c9a432" opacity="0.75" letter-spacing="4">STRAIT OF HORMUZ OIL-TANKER INTELLIGENCE</text>
+
+  <!-- Divider line -->
+  <line x1="210" y1="258" x2="990" y2="258" stroke="#c9a432" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- Status line (terminal flavor) -->
+  <text x="210" y="298" font-family="'Courier New', Courier, monospace" font-size="18" fill="#c9a432" opacity="0.55" letter-spacing="2">LIVE VESSEL TRACKING  ·  AIS DATA  ·  CRUDE PRICE FEED</text>
+
+  <!-- URL label -->
+  <text x="990" y="590" font-family="'Courier New', Courier, monospace" font-size="18" fill="#c9a432" opacity="0.5" text-anchor="end">oil.yieldwise.my</text>
+
+  <!-- Corner bracket decoration -->
+  <path d="M40 40 L40 20 L60 20" stroke="#c9a432" stroke-width="2" fill="none" opacity="0.5"/>
+  <path d="M1160 40 L1160 20 L1140 20" stroke="#c9a432" stroke-width="2" fill="none" opacity="0.5"/>
+  <path d="M40 590 L40 610 L60 610" stroke="#c9a432" stroke-width="2" fill="none" opacity="0.5"/>
+  <path d="M1160 590 L1160 610 L1140 610" stroke="#c9a432" stroke-width="2" fill="none" opacity="0.5"/>
+</svg>

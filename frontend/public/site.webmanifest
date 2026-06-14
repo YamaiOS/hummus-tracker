@@ -1,0 +1,23 @@
+{
+  "name": "Hummus Tracker",
+  "short_name": "Hormuz",
+  "description": "Strait of Hormuz oil-tanker intelligence dashboard — live AIS vessel tracking and crude price feed.",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#0d2240",
+  "background_color": "#0d2240",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.svg",
+      "sizes": "180x180",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

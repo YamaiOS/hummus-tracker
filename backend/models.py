@@ -239,6 +239,22 @@ class DisruptionEvent(Base):
     source = Column(String, nullable=True)
 
 
+class MetricHistory(Base):
+    """Hourly snapshot of key Hormuz metrics for historical time-series."""
+    __tablename__ = "metric_history"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    ts = Column(String, index=True, nullable=False)          # UTC ISO-8601 string
+    strait_flow_mbpd = Column(Float, nullable=True)          # estimated flow in mbpd
+    brent = Column(Float, nullable=True)                     # Brent crude USD/bbl
+    wti = Column(Float, nullable=True)                       # WTI crude USD/bbl
+    transit_count = Column(Integer, nullable=True)           # IMF portwatch transit count
+    dark_count = Column(Integer, nullable=True)              # active dark vessels
+    sts_count = Column(Integer, nullable=True)               # active STS events
+    risk_score = Column(Integer, nullable=True)              # Hormuz Risk Index 0-100
+    shamal_max_wind = Column(Float, nullable=True)           # max wind speed kn across terminals
+
+
 class BunkerPrice(Base):
     """Fujairah bunker fuel prices (VLSFO, HSFO)."""
     __tablename__ = "bunker_prices"
