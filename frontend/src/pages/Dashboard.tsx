@@ -4,6 +4,7 @@ import { LayoutDashboard, BarChart3, PieChart, Info } from 'lucide-react'
 import DataFreshnessBadge from '../components/DataFreshnessBadge'
 import StraitStatusBanner from '../components/StraitStatusBanner'
 import MethodologyModal from '../components/MethodologyModal'
+import RiskChip from '../components/RiskChip'
 import { fetchOverview, fetchFlowEstimate } from '../api/client'
 
 const OperationsTab = lazy(() => import('./tabs/OperationsTab'))
@@ -70,15 +71,18 @@ export default function Dashboard() {
       </div>
       {/* Header — Solid deep petroleum, no blur */}
       <header className="border-b border-petro-border bg-petro-bg sticky top-0 z-50">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <div className="flex flex-col">
-            <h1 className="text-lg font-semibold tracking-wide text-text-warm leading-tight">
-              HUMMUS TRACKER
-            </h1>
-            <p className="text-sm text-text-faint font-medium">Strait of Hormuz Intelligence</p>
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex flex-col shrink-0">
+              <h1 className="text-lg font-semibold tracking-wide text-text-warm leading-tight">
+                HUMMUS TRACKER
+              </h1>
+              <p className="text-sm text-text-faint font-medium">Strait of Hormuz Intelligence</p>
+            </div>
+            <RiskChip onClickToAnalytics={() => setActiveTab('analytics')} />
           </div>
 
-          <div className="flex items-center gap-4 sm:gap-6">
+          <div className="flex items-center gap-3 sm:gap-5 shrink-0">
             {/* Desktop: both prices */}
             {(prices?.brent_futures || prices?.brent) && (
               <div className="hidden sm:flex items-center gap-4 border-r border-petro-border pr-4 sm:pr-6">
