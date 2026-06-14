@@ -371,3 +371,46 @@ export interface HealthResponse {
 
 export const fetchHealth = () =>
   api.get<HealthResponse>('/health').then(r => r.data)
+
+// ── Risk Index ───────────────────────────────────────────────────────────────
+
+export interface RiskIndexComponent {
+  name: string
+  score_0_100: number
+  weight: number
+  detail: string
+}
+
+export interface RiskIndex {
+  score: number
+  level: 'low' | 'elevated' | 'high' | 'severe'
+  summary: string
+  components: RiskIndexComponent[]
+  computed_at: string
+}
+
+export const fetchRiskIndex = () =>
+  api.get<RiskIndex>('/risk-index').then(r => r.data)
+
+// ── History Series ───────────────────────────────────────────────────────────
+
+export interface HistorySeriesPoint {
+  ts: string
+  strait_flow_mbpd: number | null
+  brent: number | null
+  wti: number | null
+  transit_count: number | null
+  dark_count: number | null
+  sts_count: number | null
+  risk_score: number | null
+  shamal_max_wind: number | null
+}
+
+export interface HistorySeries {
+  series: HistorySeriesPoint[]
+  count: number
+  days: number
+}
+
+export const fetchHistorySeries = () =>
+  api.get<HistorySeries>('/history/series').then(r => r.data)

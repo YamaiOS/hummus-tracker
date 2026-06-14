@@ -1,8 +1,9 @@
 import { useState, lazy, Suspense } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { LayoutDashboard, BarChart3, PieChart } from 'lucide-react'
+import { LayoutDashboard, BarChart3, PieChart, Info } from 'lucide-react'
 import DataFreshnessBadge from '../components/DataFreshnessBadge'
 import StraitStatusBanner from '../components/StraitStatusBanner'
+import MethodologyModal from '../components/MethodologyModal'
 import { fetchOverview, fetchFlowEstimate } from '../api/client'
 
 const OperationsTab = lazy(() => import('./tabs/OperationsTab'))
@@ -19,6 +20,7 @@ function TabFallback() {
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<'ops' | 'market' | 'analytics'>('ops')
+  const [methodologyOpen, setMethodologyOpen] = useState(false)
   const { data, isLoading } = useQuery({
     queryKey: ['overview'],
     queryFn: fetchOverview,
@@ -115,6 +117,15 @@ export default function Dashboard() {
             )}
 
             <DataFreshnessBadge />
+
+            <button
+              onClick={() => setMethodologyOpen(true)}
+              className="flex items-center gap-1.5 text-xs font-bold text-text-muted hover:text-petro-teal transition-colors uppercase tracking-wide"
+              title="Data & Methodology"
+            >
+              <Info size={14} />
+              <span className="hidden sm:inline">Methodology</span>
+            </button>
 
             <div className="flex items-center gap-2">
               <span className={`w-1.5 h-1.5 rounded-full ${getStatusColor()}`} />
@@ -213,6 +224,7 @@ export default function Dashboard() {
           </p>
         </footer>
       </main>
+      <MethodologyModal open={methodologyOpen} onClose={() => setMethodologyOpen(false)} />
     </div>
   )
 }

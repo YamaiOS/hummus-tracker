@@ -1,17 +1,77 @@
 import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import { MapContainer, TileLayer, CircleMarker, Marker, Popup, Rectangle, Polyline, Tooltip } from 'react-leaflet'
-import { 
-  fetchLiveVessels, 
-  fetchDisruptions, 
+import {
+  fetchLiveVessels,
+  fetchDisruptions,
   fetchDarkVessels,
   fetchSTSEvents,
   fetchFloatingStorage,
-  Vessel 
+  Vessel
 } from '../api/client'
 import 'leaflet/dist/leaflet.css'
-import { Anchor, EyeOff, Link2 } from 'lucide-react'
+import { Anchor, EyeOff, Link2, Layers } from 'lucide-react'
 import L from 'leaflet'
 import { renderToStaticMarkup } from 'react-dom/server'
+
+// ---------------------------------------------------------------------------
+// Infrastructure layer — oil terminals, TSS chokepoint
+// ---------------------------------------------------------------------------
+
+interface Terminal {
+  name: string
+  lat: number
+  lon: number
+  country: string
+}
+
+const OIL_TERMINALS: Terminal[] = [
+  { name: 'Ras Tanura',       lat: 26.64, lon: 50.16, country: 'SA' },
+  { name: 'Juaymah',          lat: 26.88, lon: 49.99, country: 'SA' },
+  { name: 'Mina Al Ahmadi',   lat: 29.07, lon: 48.16, country: 'KW' },
+  { name: 'Kharg Island',     lat: 29.23, lon: 50.32, country: 'IR' },
+  { name: 'Bandar Abbas',     lat: 27.13, lon: 56.21, country: 'IR' },
+  { name: 'Das Island',       lat: 25.14, lon: 52.87, country: 'AE' },
+  { name: 'Halul',            lat: 25.67, lon: 52.41, country: 'QA' },
+  { name: 'Jebel Dhanna / Ruwais', lat: 24.18, lon: 52.61, country: 'AE' },
+  { name: 'Jebel Ali',        lat: 25.01, lon: 55.06, country: 'AE' },
+  { name: 'Fujairah',         lat: 25.16, lon: 56.36, country: 'AE' },
+]
+
+// Narrowest point of the strait ~26.57N, 56.47E
+const STRAIT_CHOKEPOINT: [number, number] = [26.57, 56.47]
+
+// Traffic Separation Scheme lanes (approximate centrelines)
+// Outbound (NE-bound): south lane
+const TSS_OUTBOUND: [number, number][] = [
+  [26.30, 56.15],
+  [26.40, 56.40],
+  [26.55, 56.65],
+  [26.65, 56.90],
+]
+// Inbound (SW-bound): north lane
+const TSS_INBOUND: [number, number][] = [
+  [26.70, 56.90],
+  [26.60, 56.65],
+  [26.75, 56.40],
+  [26.65, 56.15],
+]
+
+function createTerminalIcon() {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14">
+    <polygon points="7,0 14,7 7,14 0,7" fill="#c4a35a" fill-opacity="0.85" stroke="#0a1628" stroke-width="1"/>
+  </svg>`
+  return L.divIcon({
+    html: svg,
+    className: 'terminal-diamond-icon',
+    iconSize: [14, 14],
+    iconAnchor: [7, 7],
+  })
+}
+
+const TERMINAL_ICON = createTerminalIcon()
+
+// ---------------------------------------------------------------------------
 
 const HORMUZ_CENTER: [number, number] = [26.0, 56.5]
 const HORMUZ_BOUNDS: [[number, number], [number, number]] = [
@@ -82,6 +142,8 @@ function vesselIconSize(v: Vessel): number {
 }
 
 export default function VesselMap() {
+  const [showInfra, setShowInfra] = useState(true)
+
   const { data, isLoading } = useQuery({
     queryKey: ['liveVessels'],
     queryFn: fetchLiveVessels,
@@ -149,6 +211,69 @@ export default function VesselMap() {
           positions={INBOUND_LANE} 
           pathOptions={{ color: '#566b8a', weight: 8, opacity: 0.05, lineCap: 'round' }} 
         />
+
+        {/* ---- Infrastructure layer (terminals + TSS) ---- */}
+        {showInfra && OIL_TERMINALS.map((t) => (
+          <Marker
+            key={`terminal-${t.name}`}
+            position={[t.lat, t.lon]}
+            icon={TERMINAL_ICON}
+          >
+            <Tooltip
+              permanent
+              direction="right"
+              opacity={1}
+              className="terminal-label"
+            >
+              {t.name}
+            </Tooltip>
+            <Popup>
+              <div className="text-[13px] font-sans p-1 min-w-[160px]">
+                <p className="font-bold text-text-warm">{t.name}</p>
+                <p className="text-[11px] font-mono text-text-muted mt-1">
+                  {t.lat.toFixed(2)}°N, {t.lon.toFixed(2)}°E
+                </p>
+                <p className="text-[11px] font-mono text-text-muted">
+                  Country: {t.country}
+                </p>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+
+        {showInfra && (
+          <>
+            {/* TSS outbound lane — teal */}
+            <Polyline
+              positions={TSS_OUTBOUND}
+              pathOptions={{ color: '#00a19c', weight: 3, opacity: 0.55, dashArray: '6 4' }}
+            >
+              <Tooltip sticky direction="top" opacity={0.9} className="terminal-label">
+                TSS Outbound Lane
+              </Tooltip>
+            </Polyline>
+            {/* TSS inbound lane — blue-grey */}
+            <Polyline
+              positions={TSS_INBOUND}
+              pathOptions={{ color: '#7ba3c8', weight: 3, opacity: 0.55, dashArray: '6 4' }}
+            >
+              <Tooltip sticky direction="top" opacity={0.9} className="terminal-label">
+                TSS Inbound Lane
+              </Tooltip>
+            </Polyline>
+            {/* Chokepoint circle */}
+            <CircleMarker
+              center={STRAIT_CHOKEPOINT}
+              radius={18}
+              pathOptions={{ color: '#c4a35a', weight: 2, fillColor: '#c4a35a', fillOpacity: 0.07, dashArray: '5 3' }}
+            >
+              <Tooltip permanent direction="bottom" opacity={1} className="terminal-label tss-label">
+                Strait of Hormuz — TSS
+              </Tooltip>
+            </CircleMarker>
+          </>
+        )}
+        {/* ---- end Infrastructure layer ---- */}
 
         {/* STS Events — Accent Gold */}
         {stsEvents.map((sts) => (
@@ -305,6 +430,15 @@ export default function VesselMap() {
           <Anchor size={10} className="text-petro-teal" />
           <span className="text-text-muted">FLOATING STORAGE</span>
         </div>
+        <div className="h-px bg-petro-border my-1" />
+        {/* Infrastructure toggle */}
+        <button
+          onClick={() => setShowInfra(v => !v)}
+          className={`flex items-center gap-2 w-full text-left transition-opacity ${showInfra ? '' : 'opacity-40'}`}
+        >
+          <Layers size={10} className="text-petro-gold" />
+          <span className={showInfra ? 'text-petro-gold' : 'text-text-muted'}>INFRASTRUCTURE</span>
+        </button>
       </div>
 
       {/* Stats overlay */}

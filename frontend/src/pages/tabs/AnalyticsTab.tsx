@@ -1,4 +1,6 @@
 import Panel from '../../components/Panel'
+import RiskIndexGauge from '../../components/RiskIndexGauge'
+import MetricHistoryChart from '../../components/MetricHistoryChart'
 import TransitChart from '../../components/TransitChart'
 import VolumeByFlag from '../../components/VolumeByFlag'
 import DailyFlowTrend from '../../components/DailyFlowTrend'
@@ -9,6 +11,24 @@ import IntelligenceBriefPanel from '../../components/IntelligenceBriefPanel'
 export default function AnalyticsTab() {
   return (
     <div className="space-y-4">
+      {/* Risk Index + Metric History — flagship analytics row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Panel
+          title="Hormuz Risk Index"
+          subtitle="Composite geopolitical &amp; flow risk score (0–100)"
+          footer="POLLED EVERY 5 MIN · MULTI-FACTOR COMPOSITE"
+        >
+          <RiskIndexGauge />
+        </Panel>
+        <Panel
+          title="Metric History"
+          subtitle="Risk score, Brent price &amp; strait flow over time"
+          footer="ACCUMULATING · HOURLY SNAPSHOTS"
+        >
+          <MetricHistoryChart />
+        </Panel>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2">
           <Panel title="Satellite Transits" subtitle="IMF PortWatch — Daily volume trends">
