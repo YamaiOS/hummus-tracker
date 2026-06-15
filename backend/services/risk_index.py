@@ -64,12 +64,14 @@ async def compute_risk_index() -> dict:
         news_data,
         seismic_data,
         insurance_data,
+        gpr_data,
     ) = await asyncio.gather(
         _safe(_get_chokepoint()),
         _safe(_get_volatility()),
         _safe(_get_news()),
         _safe(_get_seismic()),
         _safe(_get_insurance()),
+        _safe(_get_gpr()),
     )
 
     components: list[dict] = []
@@ -141,6 +143,21 @@ async def compute_risk_index() -> dict:
             "weight": 0.12,
             "tier": "EST",
             "source": "seeded/JWC-proxy",
+            "detail": detail,
+        })
+
+    # ── Geopolitical risk: Caldara-Iacoviello GPR (weight .10, tier LIVE) ─────
+    # Source: GPR index (peer-reviewed, backtested) — a structural geopolitical
+    # signal complementing the faster-moving News Pressure component.
+    gpr_result = _score_gpr(gpr_data)
+    if gpr_result is not None:
+        s, detail = gpr_result
+        components.append({
+            "name": "Geopolitical (GPR)",
+            "score_0_100": round(s, 1),
+            "weight": 0.10,
+            "tier": "LIVE",
+            "source": "Caldara-Iacoviello GPR",
             "detail": detail,
         })
 
@@ -432,6 +449,29 @@ async def _get_news() -> list:
 async def _get_seismic() -> dict:
     from .seismic import get_regional_seismicity
     return await get_regional_seismicity()
+
+
+async def _get_gpr() -> dict:
+    from .gpr import get_gpr
+    return await get_gpr()
+
+
+def _score_gpr(gpr_data: Optional[dict]) -> Optional[tuple[float, str]]:
+    """Score from the GPR index normalized_0_100 field."""
+    try:
+        if not gpr_data:
+            return None
+        norm = gpr_data.get("normalized_0_100")
+        if norm is None:
+            return None
+        latest = gpr_data.get("latest") or {}
+        gpr_val = latest.get("gpr")
+        regime = gpr_data.get("regime", "")
+        detail = f"GPR {round(gpr_val)} ({regime})" if gpr_val else f"GPR risk {round(float(norm))}/100"
+        return _clamp(float(norm)), detail
+    except Exception as exc:
+        logger.warning("_score_gpr failed: %s", exc)
+        return None
 
 
 async def _get_insurance() -> dict:
