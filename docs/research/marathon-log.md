@@ -37,3 +37,11 @@ geometric — masked crisis). Live score 72/high. Backward-compatible output.
 - QA: 0 console/page/network errors, no panel overlaps. Risk Index v2 live (72/high).
 ### Next: W7 EIA OPEC/Iran/Saudi production context + GPS/AIS-integrity banner;
 ### W8 risk decomposition + MARAD/UKMTO official incident feed.
+
+## Waves 7-8 (DONE, deployed 2026-06-15T23:50:27.147080+00:00)
+- W7: EIA OPEC/Gulf production (/api/production, real: Saudi 12.6/Iran 4.7/OPEC 35.4 mbpd)
+  + GPS/AIS data-integrity banner (/api/integrity, news-derived). 38 endpoints.
+- W8: GPR folded into Risk Index — now 8 components, 7 LIVE.
+- FULL QA: all endpoints 200, 0 errors, no overlaps, interactions pass.
+### Next: W9 MARAD/UKMTO official incident feed (higher-credibility than Google News)
+### + risk-index decomposition view; W10 historical regime annotation / EU gas storage (GIE).
