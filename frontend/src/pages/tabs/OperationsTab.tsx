@@ -8,6 +8,8 @@ import FloatingStoragePanel from '../../components/FloatingStoragePanel'
 import FreightRates from '../../components/FreightRates'
 import VesselTable from '../../components/VesselTable'
 import NewsWire from '../../components/NewsWire'
+import SeismicPanel from '../../components/SeismicPanel'
+import MarinePanel from '../../components/MarinePanel'
 
 interface OperationsTabProps {
   darkVesselCount: number
@@ -33,6 +35,9 @@ export default function OperationsTab({ darkVesselCount }: OperationsTabProps) {
           <Panel title="Shamal Wind Alerts" subtitle="Terminal weather conditions">
             <WeatherAlertsPanel />
           </Panel>
+          <Panel title="Marine Conditions" subtitle="Hormuz narrows — wave & swell">
+            <MarinePanel />
+          </Panel>
         </div>
       </div>
 
@@ -40,7 +45,7 @@ export default function OperationsTab({ darkVesselCount }: OperationsTabProps) {
         <NewsWire />
       </Panel>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Panel title="AIS Dark Vessels" subtitle={`${darkVesselCount} active detections`}>
           <DarkVesselPanel />
         </Panel>
@@ -54,6 +59,10 @@ export default function OperationsTab({ darkVesselCount }: OperationsTabProps) {
           <FreightRates />
         </Panel>
       </div>
+
+      <Panel title="Regional Seismicity" subtitle="USGS quakes near Gulf terminals">
+        <SeismicPanel />
+      </Panel>
 
       <Panel title="Tracking Registry" subtitle="Detailed tanker and LNG carrier telemetry">
         <VesselTable />

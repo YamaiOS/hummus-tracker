@@ -6,10 +6,32 @@ import TopDestinations from '../../components/TopDestinations'
 import PriceChart from '../../components/PriceChart'
 import BunkerPricesPanel from '../../components/BunkerPricesPanel'
 import SupplyChainImpact from '../../components/SupplyChainImpact'
+import GasPricePanel from '../../components/GasPricePanel'
+import VolatilityWidget from '../../components/VolatilityWidget'
 
 export default function MarketTab() {
   return (
     <div className="space-y-4">
+      {/* Gas & LNG + OVX row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+        <div className="lg:col-span-2">
+          <Panel
+            title="Global Gas & LNG Prices"
+            subtitle="Asia (JKM) · EU (TTF) · Henry Hub — Qatar LNG transits Hormuz"
+            footer="FRED/IMF MONTHLY — LAGS SPOT"
+          >
+            <GasPricePanel />
+          </Panel>
+        </div>
+        <div>
+          <Panel
+            title="Oil Volatility (OVX)"
+            subtitle="Crude implied vol — risk sentiment"
+          >
+            <VolatilityWidget />
+          </Panel>
+        </div>
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
         <div className="lg:col-span-2">
           <Panel

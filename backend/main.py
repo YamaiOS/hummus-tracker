@@ -169,6 +169,49 @@ async def news(limit: int = 30):
     }
 
 
+@app.get("/api/gas-prices")
+async def gas_prices():
+    """Global gas/LNG price picture (JKM/Asia, EU/TTF proxy, Henry Hub) from FRED."""
+    from .services.gas_prices import get_gas_prices
+    return await get_gas_prices()
+
+
+@app.get("/api/volatility")
+async def volatility():
+    """Crude-oil implied volatility (CBOE OVX) from FRED — risk-sentiment signal."""
+    from .services.volatility import get_oil_volatility
+    return await get_oil_volatility()
+
+
+@app.get("/api/chokepoints")
+async def chokepoints():
+    """Multi-chokepoint transit comparison (Hormuz vs Suez/Bab-el-Mandeb/Malacca)."""
+    from .services.chokepoints import get_chokepoint_comparison
+    return await get_chokepoint_comparison()
+
+
+@app.get("/api/bypass")
+async def bypass():
+    """Hormuz bypass-pipeline capacity vs throughput — the supply-gap model."""
+    from .services.bypass import get_bypass_capacity
+    result = get_bypass_capacity()
+    return await result if hasattr(result, "__await__") else result
+
+
+@app.get("/api/seismic")
+async def seismic():
+    """Regional seismicity (USGS) near Gulf oil/LNG terminals."""
+    from .services.seismic import get_regional_seismicity
+    return await get_regional_seismicity()
+
+
+@app.get("/api/marine")
+async def marine():
+    """Marine wave/swell conditions at the Strait of Hormuz narrows (Open-Meteo)."""
+    from .services.marine import get_marine_conditions
+    return await get_marine_conditions()
+
+
 @app.get("/api/overview")
 async def overview():
     """Dashboard overview — key metrics for the Hormuz strait.

@@ -7,10 +7,30 @@ import DailyFlowTrend from '../../components/DailyFlowTrend'
 import VesselClassBreakdown from '../../components/VesselClassBreakdown'
 import DisruptionTimeline from '../../components/DisruptionTimeline'
 import IntelligenceBriefPanel from '../../components/IntelligenceBriefPanel'
+import ChokepointComparison from '../../components/ChokepointComparison'
+import BypassGauge from '../../components/BypassGauge'
 
 export default function AnalyticsTab() {
   return (
     <div className="space-y-4">
+      {/* Macro context row: chokepoint comparison + bypass capacity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+        <Panel
+          title="Chokepoint Comparison"
+          subtitle="Hormuz vs global maritime chokepoints (% of 30-day baseline)"
+          footer="POLLED EVERY 5 MIN · IMF PORTWATCH"
+        >
+          <ChokepointComparison />
+        </Panel>
+        <Panel
+          title="Bypass Capacity &amp; Supply Gap"
+          subtitle="Pipeline reroute vs ~20.9 mbpd Hormuz throughput"
+          footer="STATIC CAPACITY · SAUDI PETROLINE · UAE FUJAIRAH · IRAN GOREH-JASK"
+        >
+          <BypassGauge />
+        </Panel>
+      </div>
+
       {/* Risk Index + Metric History — flagship analytics row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Panel

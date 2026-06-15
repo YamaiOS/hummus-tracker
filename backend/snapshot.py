@@ -71,6 +71,12 @@ ENDPOINTS: list[str] = [
     "/api/risk-index",
     "/api/history/series?days=90",
     "/api/news",
+    "/api/gas-prices",
+    "/api/volatility",
+    "/api/chokepoints",
+    "/api/bypass",
+    "/api/seismic",
+    "/api/marine",
 ]
 
 

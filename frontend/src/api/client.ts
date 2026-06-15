@@ -434,3 +434,61 @@ export interface NewsResponse {
 
 export const fetchNews = () =>
   api.get<NewsResponse>('/news').then(r => r.data)
+
+// ── Energy / macro enrichment (Wave 2) ───────────────────────────────────────
+
+export interface GasPricePoint { date: string; jkm: number | null; eu_gas: number | null; henry_hub: number | null }
+export interface GasPrices {
+  series: GasPricePoint[]
+  latest: { jkm: number | null; eu_gas: number | null; henry_hub: number | null; jkm_hh_spread: number | null; date: string }
+  source: string
+  updated_at: string
+}
+export const fetchGasPrices = () => api.get<GasPrices>('/gas-prices').then(r => r.data)
+
+export interface Volatility {
+  ovx: number | null
+  ovx_date: string | null
+  mean_252: number | null
+  zscore: number | null
+  regime: 'low' | 'elevated' | 'high' | 'unknown'
+  history: { date: string; ovx: number | null }[]
+  source: string
+  updated_at: string
+}
+export const fetchVolatility = () => api.get<Volatility>('/volatility').then(r => r.data)
+
+export interface Chokepoint {
+  id: string; name: string; date: string
+  latest_total: number | null; latest_tanker: number | null
+  baseline_total_30d: number | null; pct_of_baseline: number | null
+}
+export interface ChokepointComparison { chokepoints: Chokepoint[]; source: string; updated_at: string }
+export const fetchChokepoints = () => api.get<ChokepointComparison>('/chokepoints').then(r => r.data)
+
+export interface BypassRoute { name: string; operator: string; capacity_mbpd: number; in_use_mbpd: number; spare_mbpd: number }
+export interface BypassCapacity {
+  hormuz_throughput_mbpd: number
+  routes: BypassRoute[]
+  total_bypass_capacity_mbpd: number
+  total_spare_mbpd: number
+  at_risk_mbpd: number
+  bypass_coverage_pct: number
+  note: string
+  source: string
+  updated_at: string
+}
+export const fetchBypass = () => api.get<BypassCapacity>('/bypass').then(r => r.data)
+
+export interface SeismicEvent { mag: number; place: string; time: string; lat: number; lon: number; depth_km: number; url: string }
+export interface Seismicity { events: SeismicEvent[]; count: number; max_mag: number | null; window_days: number; source: string; updated_at: string }
+export const fetchSeismic = () => api.get<Seismicity>('/seismic').then(r => r.data)
+
+export interface MarineConditions {
+  current: { wave_height: number | null; swell_wave_height: number | null; wind_wave_height: number | null; time: string | null }
+  hourly: { time: string; wave_height: number | null; swell_wave_height: number | null }[]
+  max_wave_24h: number | null
+  source: string
+  updated_at: string
+}
+export const fetchMarine = () => api.get<MarineConditions>('/marine').then(r => r.data)
