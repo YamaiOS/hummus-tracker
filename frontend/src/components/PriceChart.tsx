@@ -1,11 +1,15 @@
 import { useQuery } from '@tanstack/react-query'
+import { useMemo } from 'react'
 import {
   ResponsiveContainer, ComposedChart, Line, Bar, XAxis, YAxis,
   CartesianGrid, Tooltip, Legend,
 } from 'recharts'
 import { fetchOilPrices, fetchIMFTransits } from '../api/client'
+import { useFilters } from '../context/FilterContext'
 
 export default function PriceChart() {
+  const { rangeDays } = useFilters()
+
   const { data: priceData, isLoading: loadingPrices } = useQuery({
     queryKey: ['oilPrices'],
     queryFn: () => fetchOilPrices(180),
@@ -22,8 +26,23 @@ export default function PriceChart() {
     return <div className="h-[300px] flex items-center justify-center text-xs text-text-faint uppercase font-bold tracking-wide">Loading Market Data...</div>
   }
 
-  const prices = priceData?.prices ?? []
-  const transits = transitData?.transits ?? []
+  const cutoff = useMemo(() => Date.now() - rangeDays * 24 * 60 * 60 * 1000, [rangeDays])
+
+  const prices = useMemo(() => {
+    const raw = priceData?.prices ?? []
+    const filtered = raw.filter(p => {
+      try { return new Date(p.date ?? '').getTime() >= cutoff } catch { return true }
+    })
+    return filtered.length > 0 ? filtered : raw
+  }, [priceData, cutoff])
+
+  const transits = useMemo(() => {
+    const raw = transitData?.transits ?? []
+    const filtered = raw.filter(t => {
+      try { return new Date(t.date ?? '').getTime() >= cutoff } catch { return true }
+    })
+    return filtered.length > 0 ? filtered : raw
+  }, [transitData, cutoff])
 
   // Merge by date
   const transitMap = new Map(transits.map(t => [t.date, t.tanker_transits]))

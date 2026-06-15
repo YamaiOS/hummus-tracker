@@ -9,6 +9,7 @@ import {
   fetchFloatingStorage,
   Vessel
 } from '../api/client'
+import { useFilters, vesselMatches } from '../context/FilterContext'
 import 'leaflet/dist/leaflet.css'
 import { Anchor, EyeOff, Link2, Layers } from 'lucide-react'
 import L from 'leaflet'
@@ -143,6 +144,7 @@ function vesselIconSize(v: Vessel): number {
 
 export default function VesselMap() {
   const [showInfra, setShowInfra] = useState(true)
+  const { search, vesselClass } = useFilters()
 
   const { data, isLoading } = useQuery({
     queryKey: ['liveVessels'],
@@ -173,7 +175,7 @@ export default function VesselMap() {
     refetchInterval: 60_000,
   })
 
-  const vessels = data?.vessels ?? []
+  const vessels = (data?.vessels ?? []).filter(v => vesselMatches(v, search, vesselClass))
   const events = disruptionData?.events ?? []
   const darkVessels = darkData?.vessels ?? []
   const stsEvents = stsData?.events ?? []

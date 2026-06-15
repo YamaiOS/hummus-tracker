@@ -1,16 +1,27 @@
 import { useQuery } from '@tanstack/react-query'
+import { useMemo } from 'react'
 import { fetchLiveVessels, Vessel } from '../api/client'
+import { useFilters, vesselMatches } from '../context/FilterContext'
 
 export default function VesselTable() {
+  const { search, vesselClass } = useFilters()
+
   const { data, isLoading } = useQuery({
     queryKey: ['liveVessels'],
     queryFn: fetchLiveVessels,
     refetchInterval: 15_000,
   })
 
-  const vessels = data?.vessels ?? []
+  const allVessels = data?.vessels ?? []
 
-  if (isLoading && vessels.length === 0) {
+  const vessels = useMemo(
+    () => allVessels.filter(v => vesselMatches(v, search, vesselClass)),
+    [allVessels, search, vesselClass]
+  )
+
+  const isFiltered = search.trim() !== '' || vesselClass !== 'all'
+
+  if (isLoading && allVessels.length === 0) {
     return (
       <div className="h-64 flex items-center justify-center bg-petro-card border border-petro-border rounded-lg">
         <span className="text-sm text-text-muted">Loading Registry...</span>
@@ -18,7 +29,7 @@ export default function VesselTable() {
     )
   }
 
-  if (vessels.length === 0) {
+  if (allVessels.length === 0) {
     return (
       <div className="text-center py-12 bg-petro-card border border-petro-border rounded-lg">
         <p className="text-sm text-text-faint">No vessels currently in the tracking zone</p>
@@ -28,6 +39,11 @@ export default function VesselTable() {
 
   return (
     <div className="overflow-x-auto custom-scrollbar">
+      {isFiltered && (
+        <div className="px-4 py-1.5 text-[11px] font-mono text-text-faint border-b border-petro-border">
+          {vessels.length} of {allVessels.length} vessels
+        </div>
+      )}
       <table className="w-full text-left border-collapse min-w-[1000px]">
         <thead>
           <tr className="bg-petro-bg text-text-muted uppercase tracking-wide text-xs border-b border-petro-border sticky top-0 z-10">
@@ -43,6 +59,13 @@ export default function VesselTable() {
           </tr>
         </thead>
         <tbody className="text-sm font-mono divide-y divide-petro-border">
+          {vessels.length === 0 && isFiltered && (
+            <tr>
+              <td colSpan={9} className="py-8 text-center text-xs text-text-faint uppercase font-bold tracking-wide">
+                No vessels match
+              </td>
+            </tr>
+          )}
           {vessels.map((v, idx) => (
             <tr 
               key={v.mmsi} 

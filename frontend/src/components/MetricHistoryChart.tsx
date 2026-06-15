@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { useMemo } from 'react'
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -10,6 +11,7 @@ import {
   Legend,
 } from 'recharts'
 import { fetchHistorySeries } from '../api/client'
+import { useFilters } from '../context/FilterContext'
 
 function formatTs(ts: string) {
   const d = new Date(ts)
@@ -17,6 +19,8 @@ function formatTs(ts: string) {
 }
 
 export default function MetricHistoryChart() {
+  const { rangeDays } = useFilters()
+
   const { data, isLoading } = useQuery({
     queryKey: ['historySeries'],
     queryFn: fetchHistorySeries,
@@ -31,7 +35,16 @@ export default function MetricHistoryChart() {
     )
   }
 
-  const series = data?.series ?? []
+  const rawSeries = data?.series ?? []
+
+  const series = useMemo(() => {
+    if (!rawSeries.length) return rawSeries
+    const cutoff = Date.now() - rangeDays * 24 * 60 * 60 * 1000
+    const filtered = rawSeries.filter(pt => {
+      try { return new Date(pt.ts).getTime() >= cutoff } catch { return true }
+    })
+    return filtered.length > 0 ? filtered : rawSeries
+  }, [rawSeries, rangeDays])
 
   if (series.length < 2) {
     return (

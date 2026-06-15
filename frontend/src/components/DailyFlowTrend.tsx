@@ -1,8 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
+import { useMemo } from 'react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import api from '../api/client'
+import { useFilters } from '../context/FilterContext'
 
 export default function DailyFlowTrend() {
+  const { rangeDays } = useFilters()
+
   const { data, isLoading } = useQuery({
     queryKey: ['dailyFlowSummary'],
     queryFn: () => api.get('/flow/daily?days=30').then(r => r.data),
@@ -17,7 +21,16 @@ export default function DailyFlowTrend() {
     )
   }
 
-  const summaries = data?.summaries || []
+  const rawSummaries = data?.summaries || []
+
+  const summaries = useMemo(() => {
+    if (!rawSummaries.length) return rawSummaries
+    const cutoff = Date.now() - rangeDays * 24 * 60 * 60 * 1000
+    const filtered = rawSummaries.filter((s: any) => {
+      try { return new Date(s.date).getTime() >= cutoff } catch { return true }
+    })
+    return filtered.length > 0 ? filtered : rawSummaries
+  }, [rawSummaries, rangeDays])
 
   if (summaries.length < 2) {
     return (

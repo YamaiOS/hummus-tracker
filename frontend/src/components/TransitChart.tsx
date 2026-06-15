@@ -1,11 +1,15 @@
 import { useQuery } from '@tanstack/react-query'
+import { useMemo } from 'react'
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis,
   CartesianGrid, Tooltip, Legend
 } from 'recharts'
 import { fetchIMFTransits } from '../api/client'
+import { useFilters } from '../context/FilterContext'
 
 export default function TransitChart() {
+  const { rangeDays } = useFilters()
+
   const { data, isLoading } = useQuery({
     queryKey: ['imfTransits'],
     queryFn: () => fetchIMFTransits(90),
@@ -16,7 +20,16 @@ export default function TransitChart() {
     return <div className="h-[300px] flex items-center justify-center text-xs text-text-faint uppercase font-bold tracking-wide">Loading Analytics...</div>
   }
 
-  const transits = data?.transits ?? []
+  const rawTransits = data?.transits ?? []
+
+  const transits = useMemo(() => {
+    if (!rawTransits.length) return rawTransits
+    const cutoff = Date.now() - rangeDays * 24 * 60 * 60 * 1000
+    const filtered = rawTransits.filter(t => {
+      try { return new Date(t.date).getTime() >= cutoff } catch { return true }
+    })
+    return filtered.length > 0 ? filtered : rawTransits
+  }, [rawTransits, rangeDays])
 
   if (transits.length === 0) {
     return (

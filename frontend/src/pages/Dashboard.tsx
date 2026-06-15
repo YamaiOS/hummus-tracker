@@ -4,8 +4,11 @@ import { LayoutDashboard, BarChart3, PieChart, Info } from 'lucide-react'
 import DataFreshnessBadge from '../components/DataFreshnessBadge'
 import StraitStatusBanner from '../components/StraitStatusBanner'
 import MethodologyModal from '../components/MethodologyModal'
-import RiskChip from '../components/RiskChip'
-import { fetchOverview, fetchFlowEstimate } from '../api/client'
+import CommandCenter from '../components/CommandCenter'
+import ControlBar from '../components/ControlBar'
+import ActionCenter from '../components/ActionCenter'
+import { FilterProvider } from '../context/FilterContext'
+import { fetchOverview } from '../api/client'
 
 const OperationsTab = lazy(() => import('./tabs/OperationsTab'))
 const MarketTab = lazy(() => import('./tabs/MarketTab'))
@@ -28,17 +31,9 @@ export default function Dashboard() {
     refetchInterval: 60_000,
   })
 
-  const { data: flowEstimate } = useQuery({
-    queryKey: ['flowEstimate'],
-    queryFn: fetchFlowEstimate,
-    refetchInterval: 60_000,
-  })
-
   const strait = data?.strait_status
   const prices = data?.oil_prices
   const stream = data?.ais_stream
-  const baseline = data?.oil_flow
-  const observedFlow = flowEstimate?.estimated_mbpd as number | undefined
 
   const isCached = strait?.source === 'cached'
 
@@ -59,6 +54,7 @@ export default function Dashboard() {
   }
 
   return (
+    <FilterProvider>
     <div className="min-h-screen bg-petro-bg text-text-warm font-sans">
       {/* Data limitations banner */}
       <div className="bg-petro-card border-b border-petro-border">
@@ -79,7 +75,6 @@ export default function Dashboard() {
               </h1>
               <p className="text-sm text-text-faint font-medium">Strait of Hormuz Intelligence</p>
             </div>
-            <RiskChip onClickToAnalytics={() => setActiveTab('analytics')} />
           </div>
 
           <div className="flex items-center gap-3 sm:gap-5 shrink-0">
@@ -165,29 +160,14 @@ export default function Dashboard() {
       <StraitStatusBanner />
 
       <main className="max-w-[1600px] mx-auto px-4 sm:px-6 py-6 space-y-4">
-        {/* KPI Row — Minimalist, no icons */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
-          <KPICard label="Vessels Tracked" value={strait?.vessels_tracked ?? 0} loading={isLoading} />
-          <KPICard label="Active Tankers" value={strait?.tankers_active ?? 0} loading={isLoading} />
-          <KPICard label="Loaded (Out)" value={strait?.loaded_tankers ?? 0} loading={isLoading} />
-          <KPICard label="Ballast (In)" value={strait?.ballast_tankers ?? 0} loading={isLoading} />
-          <KPICard
-            label="Flow (mbpd)"
-            value={observedFlow !== undefined ? observedFlow.toFixed(1) : '—'}
-            loading={isLoading}
-            suffix=" mbpd"
-            simulated={stream?.mode === 'mock'}
-            sublabel={`vs ${(baseline?.eia_baseline_mbpd ?? 20.0).toFixed(1)} baseline`}
-          />
-          <KPICard
-            label="DWT Throughput"
-            value={strait?.total_dwt_outbound ? (strait.total_dwt_outbound / 1_000_000).toFixed(2) : 0}
-            loading={isLoading}
-            suffix="M"
-            simulated={stream?.mode === 'mock'}
-          />
-          <KPICard label="I/O Ratio" value={strait?.inbound_outbound_ratio?.toFixed(2) ?? '1.00'} loading={isLoading} />
-        </div>
+        {/* Command center — hero situational picture */}
+        <CommandCenter />
+
+        {/* Calls to action — alerts, export, share, install */}
+        <ActionCenter />
+
+        {/* Global inputs — time range, vessel search, class filter */}
+        <ControlBar />
 
         {/* Tab Switcher */}
         <div className="flex items-center gap-1 p-1 bg-petro-card border border-petro-border rounded-lg w-full sm:w-fit">
@@ -230,6 +210,7 @@ export default function Dashboard() {
       </main>
       <MethodologyModal open={methodologyOpen} onClose={() => setMethodologyOpen(false)} />
     </div>
+    </FilterProvider>
   )
 }
 
@@ -256,41 +237,3 @@ function TabButton({
   )
 }
 
-function KPICard({
-  label, value, loading, suffix = '', simulated = false, sublabel
-}: {
-  label: string
-  value: number | string
-  loading: boolean
-  suffix?: string
-  simulated?: boolean
-  sublabel?: string
-}) {
-  return (
-    <div className="bg-petro-card border border-petro-border rounded-lg px-4 py-4 relative">
-      {simulated && (
-        <span className="absolute top-2 right-2 bg-petro-gold/20 text-petro-gold text-[11px] font-bold px-1 rounded border border-petro-gold/30 uppercase">
-          SIM
-        </span>
-      )}
-      <p className="text-xs font-bold text-text-muted uppercase tracking-wide mb-1">
-        {label}
-      </p>
-      {loading ? (
-        <p className="text-xs text-text-faint">Loading...</p>
-      ) : (
-        <>
-          <p className="text-2xl font-mono font-bold text-text-warm leading-none">
-            {typeof value === 'number' ? value.toLocaleString() : value}
-            <span className="text-xs text-text-faint font-normal ml-1 lowercase">
-              {suffix}
-            </span>
-          </p>
-          {sublabel && (
-            <p className="text-[11px] text-text-faint font-mono mt-1">{sublabel}</p>
-          )}
-        </>
-      )}
-    </div>
-  )
-}
