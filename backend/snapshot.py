@@ -77,6 +77,7 @@ ENDPOINTS: list[str] = [
     "/api/bypass",
     "/api/seismic",
     "/api/marine",
+    "/api/gpr",
 ]
 
 

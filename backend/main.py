@@ -212,6 +212,13 @@ async def marine():
     return await get_marine_conditions()
 
 
+@app.get("/api/gpr")
+async def gpr():
+    """Caldara-Iacoviello Geopolitical Risk Index (monthly, peer-reviewed)."""
+    from .services.gpr import get_gpr
+    return await get_gpr()
+
+
 @app.get("/api/overview")
 async def overview():
     """Dashboard overview — key metrics for the Hormuz strait.

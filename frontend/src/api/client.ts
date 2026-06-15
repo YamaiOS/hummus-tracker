@@ -492,3 +492,22 @@ export interface MarineConditions {
   updated_at: string
 }
 export const fetchMarine = () => api.get<MarineConditions>('/marine').then(r => r.data)
+
+export interface GPRLatest {
+  month: string
+  gpr: number
+  gpr_threats: number | null
+  gpr_acts: number | null
+}
+
+export interface GPR {
+  latest: GPRLatest | null
+  normalized_0_100: number | null
+  regime: 'normal' | 'elevated' | 'high' | 'severe' | 'unknown'
+  history: { month: string; gpr: number }[]
+  baseline: number
+  source: string
+  updated_at: string
+}
+
+export const fetchGPR = () => api.get<GPR>('/gpr').then(r => r.data)

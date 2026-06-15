@@ -10,12 +10,13 @@ import IntelligenceBriefPanel from '../../components/IntelligenceBriefPanel'
 import ChokepointComparison from '../../components/ChokepointComparison'
 import BypassGauge from '../../components/BypassGauge'
 import ScenarioCalculator from '../../components/ScenarioCalculator'
+import GPRPanel from '../../components/GPRPanel'
 
 export default function AnalyticsTab() {
   return (
     <div className="space-y-4">
-      {/* Macro context row: chokepoint comparison + bypass capacity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+      {/* Macro context row: chokepoint comparison + bypass capacity + GPR */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
         <Panel
           title="Chokepoint Comparison"
           subtitle="Hormuz vs global maritime chokepoints (% of 30-day baseline)"
@@ -31,6 +32,14 @@ export default function AnalyticsTab() {
           tier="EST"
         >
           <BypassGauge />
+        </Panel>
+        <Panel
+          title="Geopolitical Risk (GPR)"
+          subtitle="Caldara-Iacoviello index — newspaper-based, backtested to 1900"
+          footer="MONTHLY · CALDARA &amp; IACOVIELLO"
+          tier="LIVE"
+        >
+          <GPRPanel />
         </Panel>
       </div>
 
