@@ -7,6 +7,7 @@ import STSEventsPanel from '../../components/STSEventsPanel'
 import FloatingStoragePanel from '../../components/FloatingStoragePanel'
 import FreightRates from '../../components/FreightRates'
 import VesselTable from '../../components/VesselTable'
+import NewsWire from '../../components/NewsWire'
 
 interface OperationsTabProps {
   darkVesselCount: number
@@ -34,6 +35,10 @@ export default function OperationsTab({ darkVesselCount }: OperationsTabProps) {
           </Panel>
         </div>
       </div>
+
+      <Panel title="Strait Intelligence Wire" subtitle="Live Hormuz & Gulf shipping headlines">
+        <NewsWire />
+      </Panel>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Panel title="AIS Dark Vessels" subtitle={`${darkVesselCount} active detections`}>

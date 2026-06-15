@@ -414,3 +414,23 @@ export interface HistorySeries {
 
 export const fetchHistorySeries = () =>
   api.get<HistorySeries>('/history/series').then(r => r.data)
+
+// ── News Wire ────────────────────────────────────────────────────────────────
+
+export interface NewsArticle {
+  title: string
+  url: string
+  source: string
+  published: string
+  age_hours: number
+  topic: 'attack' | 'sanctions' | 'geopolitics' | 'shipping' | 'energy'
+}
+
+export interface NewsResponse {
+  articles: NewsArticle[]
+  count: number
+  updated_at: string
+}
+
+export const fetchNews = () =>
+  api.get<NewsResponse>('/news').then(r => r.data)

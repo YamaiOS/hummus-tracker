@@ -70,6 +70,7 @@ ENDPOINTS: list[str] = [
     "/api/disruptions/",
     "/api/risk-index",
     "/api/history/series?days=90",
+    "/api/news",
 ]
 
 

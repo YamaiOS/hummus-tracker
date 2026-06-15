@@ -155,6 +155,20 @@ async def history_series(days: int = 30):
     return get_history_series(days=days)
 
 
+@app.get("/api/news")
+async def news(limit: int = 30):
+    """Live Strait of Hormuz / Gulf oil-shipping news from Google News RSS."""
+    from .services.news import fetch_strait_news
+    from datetime import datetime, timezone
+
+    articles = await fetch_strait_news(limit=limit)
+    return {
+        "articles": articles,
+        "count": len(articles),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
 @app.get("/api/overview")
 async def overview():
     """Dashboard overview — key metrics for the Hormuz strait.
