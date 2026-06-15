@@ -13,6 +13,16 @@ export default function DailyFlowTrend() {
     refetchInterval: 300_000,
   })
 
+  const summaries = useMemo(() => {
+    const rawSummaries = data?.summaries || []
+    if (!rawSummaries.length) return rawSummaries
+    const cutoff = Date.now() - rangeDays * 24 * 60 * 60 * 1000
+    const filtered = rawSummaries.filter((s: any) => {
+      try { return new Date(s.date).getTime() >= cutoff } catch { return true }
+    })
+    return filtered.length > 0 ? filtered : rawSummaries
+  }, [data, rangeDays])
+
   if (isLoading) {
     return (
       <div className="h-64 flex items-center justify-center">
@@ -20,17 +30,6 @@ export default function DailyFlowTrend() {
       </div>
     )
   }
-
-  const rawSummaries = data?.summaries || []
-
-  const summaries = useMemo(() => {
-    if (!rawSummaries.length) return rawSummaries
-    const cutoff = Date.now() - rangeDays * 24 * 60 * 60 * 1000
-    const filtered = rawSummaries.filter((s: any) => {
-      try { return new Date(s.date).getTime() >= cutoff } catch { return true }
-    })
-    return filtered.length > 0 ? filtered : rawSummaries
-  }, [rawSummaries, rangeDays])
 
   if (summaries.length < 2) {
     return (

@@ -22,10 +22,6 @@ export default function PriceChart() {
     staleTime: 5 * 60_000,
   })
 
-  if (loadingPrices && !priceData) {
-    return <div className="h-[300px] flex items-center justify-center text-xs text-text-faint uppercase font-bold tracking-wide">Loading Market Data...</div>
-  }
-
   const cutoff = useMemo(() => Date.now() - rangeDays * 24 * 60 * 60 * 1000, [rangeDays])
 
   const prices = useMemo(() => {
@@ -43,6 +39,10 @@ export default function PriceChart() {
     })
     return filtered.length > 0 ? filtered : raw
   }, [transitData, cutoff])
+
+  if (loadingPrices && !priceData) {
+    return <div className="h-[300px] flex items-center justify-center text-xs text-text-faint uppercase font-bold tracking-wide">Loading Market Data...</div>
+  }
 
   // Merge by date
   const transitMap = new Map(transits.map(t => [t.date, t.tanker_transits]))

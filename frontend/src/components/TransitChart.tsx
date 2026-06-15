@@ -16,20 +16,19 @@ export default function TransitChart() {
     staleTime: 5 * 60_000,
   })
 
-  if (isLoading && !data) {
-    return <div className="h-[300px] flex items-center justify-center text-xs text-text-faint uppercase font-bold tracking-wide">Loading Analytics...</div>
-  }
-
-  const rawTransits = data?.transits ?? []
-
   const transits = useMemo(() => {
+    const rawTransits = data?.transits ?? []
     if (!rawTransits.length) return rawTransits
     const cutoff = Date.now() - rangeDays * 24 * 60 * 60 * 1000
     const filtered = rawTransits.filter(t => {
       try { return new Date(t.date).getTime() >= cutoff } catch { return true }
     })
     return filtered.length > 0 ? filtered : rawTransits
-  }, [rawTransits, rangeDays])
+  }, [data, rangeDays])
+
+  if (isLoading && !data) {
+    return <div className="h-[300px] flex items-center justify-center text-xs text-text-faint uppercase font-bold tracking-wide">Loading Analytics...</div>
+  }
 
   if (transits.length === 0) {
     return (

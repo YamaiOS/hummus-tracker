@@ -27,6 +27,16 @@ export default function MetricHistoryChart() {
     refetchInterval: 300_000,
   })
 
+  const series = useMemo(() => {
+    const rawSeries = data?.series ?? []
+    if (!rawSeries.length) return rawSeries
+    const cutoff = Date.now() - rangeDays * 24 * 60 * 60 * 1000
+    const filtered = rawSeries.filter(pt => {
+      try { return new Date(pt.ts).getTime() >= cutoff } catch { return true }
+    })
+    return filtered.length > 0 ? filtered : rawSeries
+  }, [data, rangeDays])
+
   if (isLoading && !data) {
     return (
       <div className="h-48 flex items-center justify-center">
@@ -34,17 +44,6 @@ export default function MetricHistoryChart() {
       </div>
     )
   }
-
-  const rawSeries = data?.series ?? []
-
-  const series = useMemo(() => {
-    if (!rawSeries.length) return rawSeries
-    const cutoff = Date.now() - rangeDays * 24 * 60 * 60 * 1000
-    const filtered = rawSeries.filter(pt => {
-      try { return new Date(pt.ts).getTime() >= cutoff } catch { return true }
-    })
-    return filtered.length > 0 ? filtered : rawSeries
-  }, [rawSeries, rangeDays])
 
   if (series.length < 2) {
     return (
