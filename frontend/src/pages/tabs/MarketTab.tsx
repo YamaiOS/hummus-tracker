@@ -19,6 +19,7 @@ export default function MarketTab() {
             title="Global Gas & LNG Prices"
             subtitle="Asia (JKM) · EU (TTF) · Henry Hub — Qatar LNG transits Hormuz"
             footer="FRED/IMF MONTHLY — LAGS SPOT"
+            tier="LIVE"
           >
             <GasPricePanel />
           </Panel>
@@ -27,6 +28,7 @@ export default function MarketTab() {
           <Panel
             title="Oil Volatility (OVX)"
             subtitle="Crude implied vol — risk sentiment"
+            tier="LIVE"
           >
             <VolatilityWidget />
           </Panel>
@@ -38,18 +40,19 @@ export default function MarketTab() {
             title="Brent-Dubai Spread"
             subtitle="90-day EFS history & market structure"
             footer="SOURCE: YFINANCE BZ=F"
+            tier="LIVE"
           >
             <MarketMetricsPanel />
           </Panel>
         </div>
         <div className="space-y-4">
-          <Panel title="Fujairah Inventory" subtitle="Weekly stock levels ('000 bbl)">
+          <Panel title="Fujairah Inventory" subtitle="Weekly stock levels ('000 bbl)" tier="EST">
             <FujairahInventoryPanel />
           </Panel>
-          <Panel title="OPEC+ Compliance" subtitle="Quota vs observed exports (7-day)">
+          <Panel title="OPEC+ Compliance" subtitle="Quota vs observed exports (7-day)" tier="EST">
             <OPECCompliancePanel />
           </Panel>
-          <Panel title="Top Destinations" subtitle="Outbound cargo flow by region">
+          <Panel title="Top Destinations" subtitle="Outbound cargo flow by region" tier="SIM">
             <TopDestinations />
           </Panel>
         </div>
@@ -59,13 +62,14 @@ export default function MarketTab() {
           title="Brent Crude"
           subtitle="Daily settlement history (FRED)"
           footer="SOURCE: FRED SPOT"
+          tier="LIVE"
         >
           <PriceChart />
         </Panel>
-        <Panel title="Bunker Market" subtitle="Fujairah VLSFO & HSFO rates">
+        <Panel title="Bunker Market" subtitle="Fujairah VLSFO & HSFO rates" tier="EST">
           <BunkerPricesPanel />
         </Panel>
-        <Panel title="Supply Chain Risk" subtitle="Insurance & routing friction">
+        <Panel title="Supply Chain Risk" subtitle="Insurance & routing friction" tier="EST">
           <SupplyChainImpact />
         </Panel>
       </div>

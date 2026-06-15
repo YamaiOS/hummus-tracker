@@ -20,6 +20,7 @@ export default function AnalyticsTab() {
           title="Chokepoint Comparison"
           subtitle="Hormuz vs global maritime chokepoints (% of 30-day baseline)"
           footer="POLLED EVERY 5 MIN · IMF PORTWATCH"
+          tier="LIVE"
         >
           <ChokepointComparison />
         </Panel>
@@ -27,6 +28,7 @@ export default function AnalyticsTab() {
           title="Bypass Capacity &amp; Supply Gap"
           subtitle="Pipeline reroute vs ~20.9 mbpd Hormuz throughput"
           footer="STATIC CAPACITY · SAUDI PETROLINE · UAE FUJAIRAH · IRAN GOREH-JASK"
+          tier="EST"
         >
           <BypassGauge />
         </Panel>
@@ -37,6 +39,7 @@ export default function AnalyticsTab() {
         title="Scenario Calculator — What If Hormuz Closes?"
         subtitle="Interactive supply-shock &amp; price-impact model"
         footer="ILLUSTRATIVE · EIA/IEA PUBLIC PARAMETERS · NOT A FORECAST"
+        tier="EST"
       >
         <ScenarioCalculator />
       </Panel>
@@ -47,6 +50,7 @@ export default function AnalyticsTab() {
           title="Hormuz Risk Index"
           subtitle="Composite geopolitical &amp; flow risk score (0–100)"
           footer="POLLED EVERY 5 MIN · MULTI-FACTOR COMPOSITE"
+          tier="LIVE"
         >
           <RiskIndexGauge />
         </Panel>
@@ -54,6 +58,7 @@ export default function AnalyticsTab() {
           title="Metric History"
           subtitle="Risk score, Brent price &amp; strait flow over time"
           footer="ACCUMULATING · HOURLY SNAPSHOTS"
+          tier="LIVE"
         >
           <MetricHistoryChart />
         </Panel>
@@ -61,30 +66,31 @@ export default function AnalyticsTab() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
         <div className="lg:col-span-2">
-          <Panel title="Satellite Transits" subtitle="IMF PortWatch — Daily volume trends">
+          <Panel title="Satellite Transits" subtitle="IMF PortWatch — Daily volume trends" tier="LIVE">
             <TransitChart />
           </Panel>
         </div>
         <div className="space-y-4">
-          <Panel title="Volume by Flag" subtitle="Selective transit intelligence">
+          <Panel title="Volume by Flag" subtitle="Selective transit intelligence" tier="SIM">
             <VolumeByFlag />
           </Panel>
           <Panel
             title="Daily Flow Trend"
             subtitle="30-day observed mbpd vs EIA baseline"
             footer="SOURCE: EIA BASELINE CROSS-REF"
+            tier="LIVE"
           >
             <DailyFlowTrend />
           </Panel>
-          <Panel title="Vessel Class Mix" subtitle="Active tanker fleet composition">
+          <Panel title="Vessel Class Mix" subtitle="Active tanker fleet composition" tier="SIM">
             <VesselClassBreakdown />
           </Panel>
         </div>
       </div>
-      <Panel title="Disruption Timeline" subtitle="Historical Strait of Hormuz incidents">
+      <Panel title="Disruption Timeline" subtitle="Historical Strait of Hormuz incidents" tier="EST">
         <DisruptionTimeline />
       </Panel>
-      <Panel title="Morning Brief" subtitle="Daily automated intelligence summary">
+      <Panel title="Morning Brief" subtitle="Daily automated intelligence summary" tier="EST">
         <IntelligenceBriefPanel />
       </Panel>
     </div>

@@ -1,9 +1,22 @@
 import { useEffect } from 'react'
-import { X, CheckCircle2, AlertTriangle, Info } from 'lucide-react'
+import { X, CheckCircle2, AlertTriangle, Info, HelpCircle } from 'lucide-react'
 
 interface MethodologyModalProps {
   open: boolean
   onClose: () => void
+}
+
+const Badge = ({ type }: { type: 'LIVE' | 'EST' | 'SIM' }) => {
+  const styles: Record<string, string> = {
+    LIVE: 'bg-petro-teal/20 text-petro-teal border-petro-teal/30',
+    EST:  'bg-sky-400/20 text-sky-300 border-sky-400/30',
+    SIM:  'bg-petro-gold/20 text-petro-gold border-petro-gold/30',
+  }
+  return (
+    <span className={`inline-block text-[9px] font-bold px-1 py-0.5 rounded border uppercase tracking-wider ${styles[type]}`}>
+      {type}
+    </span>
+  )
 }
 
 export default function MethodologyModal({ open, onClose }: MethodologyModalProps) {
@@ -44,33 +57,93 @@ export default function MethodologyModal({ open, onClose }: MethodologyModalProp
 
         <div className="px-6 py-5 space-y-6">
 
-          {/* Refresh model */}
+          {/* 1 — Refresh model */}
           <section>
             <h3 className="text-xs font-bold text-text-muted uppercase tracking-wide mb-2">
               Data Refresh Model
             </h3>
             <p className="text-sm text-text-faint leading-relaxed">
-              The dashboard operates on a <span className="text-text-warm font-semibold">static-snapshot / hourly-refresh</span> model.
-              A backend pipeline fetches and caches all external data sources once per hour.
-              The UI reads from this snapshot; no data is streamed live to the browser.
+              The dashboard runs on a <span className="text-text-warm font-semibold">static-snapshot / hourly-refresh</span> model.
+              A backend pipeline fetches and caches all external sources once per hour via an external cron trigger.
+              The host process scales to zero between runs; the UI always reads from the latest cached snapshot — no data is streamed live to the browser.
               The <span className="text-text-warm font-semibold">Data Freshness</span> badge in the header shows the age of the current snapshot.
             </p>
           </section>
 
-          {/* Real sources */}
+          {/* 2 — Data-quality tiers */}
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <HelpCircle size={14} className="text-text-muted shrink-0" />
+              <h3 className="text-xs font-bold text-text-muted uppercase tracking-wide">
+                Data-Quality Tiers
+              </h3>
+            </div>
+            <p className="text-xs text-text-faint mb-3 leading-relaxed">
+              Every panel carries one of three badges indicating confidence in the underlying data.
+            </p>
+            <div className="space-y-2">
+              {[
+                {
+                  badge: 'LIVE' as const,
+                  label: 'Real — primary source',
+                  detail: 'Data fetched directly from a public API or authoritative feed during the most recent pipeline run. Values reflect real-world readings within the snapshot age shown in the header.',
+                },
+                {
+                  badge: 'EST' as const,
+                  label: 'Estimated / seeded / modeled',
+                  detail: 'Values derived from published reference figures (EIA, IEA, CNBC, Lloyd\'s) or heuristic models. Not connected to a live feed; updated manually when public sources change.',
+                },
+                {
+                  badge: 'SIM' as const,
+                  label: 'Simulated',
+                  detail: 'Data generated from a synthetic model because no free live feed is available. Does not reflect actual real-world conditions. Clearly labeled throughout the UI.',
+                },
+              ].map(({ badge, label, detail }) => (
+                <div key={badge} className="flex gap-3 bg-petro-bg rounded-lg px-4 py-3 border border-petro-border">
+                  <div className="shrink-0 pt-0.5"><Badge type={badge} /></div>
+                  <div>
+                    <p className="text-xs font-bold text-text-warm">{label}</p>
+                    <p className="text-xs text-text-faint mt-0.5">{detail}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* 3 — LIVE sources */}
           <section>
             <div className="flex items-center gap-2 mb-3">
               <CheckCircle2 size={14} className="text-petro-teal shrink-0" />
               <h3 className="text-xs font-bold text-petro-teal uppercase tracking-wide">
-                Real / Verified Data Sources
+                Real (LIVE) Data Sources
               </h3>
             </div>
             <div className="space-y-2">
               {[
-                { source: 'FRED (St. Louis Fed)', provides: 'Brent crude spot price (DCOILBRENTEU), updated daily on trading days' },
-                { source: 'EIA (U.S. Energy Information Administration)', provides: 'Petroleum supply/demand statistics; Strait of Hormuz throughput baseline (~20 mbpd)' },
-                { source: 'IMF PortWatch', provides: 'Satellite-derived chokepoint transit vessel counts; updated daily' },
-                { source: 'Open-Meteo', provides: 'Terminal weather for Fujairah / Hormuz region; Shamal wind speed & direction' },
+                {
+                  source: 'FRED (St. Louis Fed)',
+                  provides: 'Brent crude spot (DCOILBRENTEU) and WTI spot (DCOILWTICO); natural gas & LNG prices — Asia JKM proxy, EU/TTF proxy, US Henry Hub; crude-oil implied volatility index (OVX). Updated on trading days.',
+                },
+                {
+                  source: 'EIA (U.S. Energy Information Administration)',
+                  provides: 'Petroleum supply/demand statistics; Strait of Hormuz throughput baseline reference (~20 mbpd).',
+                },
+                {
+                  source: 'IMF PortWatch',
+                  provides: 'Satellite-derived chokepoint transit vessel counts across multiple chokepoints: Hormuz, Suez Canal, Bab-el-Mandeb, and Strait of Malacca. Updated daily.',
+                },
+                {
+                  source: 'Open-Meteo',
+                  provides: 'Terminal weather for Fujairah/Hormuz region including Shamal wind speed & direction; marine wave height and swell conditions at the Hormuz narrows.',
+                },
+                {
+                  source: 'USGS Earthquake Hazards',
+                  provides: 'Regional seismicity near Gulf terminals — recent M2.5+ events within 500 km of the Strait.',
+                },
+                {
+                  source: 'Google News RSS',
+                  provides: 'Live Strait Intelligence Wire — headline feed filtered for Hormuz/Gulf geopolitical terms, updated each pipeline run.',
+                },
               ].map(({ source, provides }) => (
                 <div key={source} className="flex gap-3 bg-petro-bg rounded-lg px-4 py-3 border border-petro-border">
                   <span className="text-petro-teal font-bold text-xs shrink-0 w-4">✓</span>
@@ -83,24 +156,55 @@ export default function MethodologyModal({ open, onClose }: MethodologyModalProp
             </div>
           </section>
 
-          {/* Simulated / seeded */}
+          {/* 4 — EST sources */}
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle size={14} className="text-sky-400 shrink-0" />
+              <h3 className="text-xs font-bold text-sky-400 uppercase tracking-wide">
+                Estimated / Seeded (EST) Data
+              </h3>
+            </div>
+            <p className="text-xs text-text-faint mb-3 leading-relaxed">
+              The following panels are labeled <Badge type="EST" /> and draw from static reference figures or heuristic models, not live feeds.
+            </p>
+            <div className="space-y-2">
+              {[
+                { label: 'War-risk insurance baseline', detail: 'Geopolitical risk premium for Hormuz hull/cargo insurance; sourced from published Lloyd\'s/JWC area designations and open news reports. Updated manually.' },
+                { label: 'Bunker prices', detail: 'Fujairah VLSFO/IFO380 bunker reference prices seeded from published market surveys (Ship & Bunker). Not a live market feed.' },
+                { label: 'Fujairah oil inventory', detail: 'Weekly inventory estimates derived from a seeded baseline; no live data connection.' },
+                { label: 'OPEC quotas', detail: 'Published OPEC+ production quota and compliance figures from official OPEC communiqués and IEA OMR.' },
+                { label: 'Bypass pipeline capacities', detail: 'Iraq–Turkey (Kirkuk–Ceyhan), UAE Habshan–Fujairah, and Saudi East–West (Petroline) bypass capacities from EIA/CNBC reference data.' },
+                { label: 'Freight TCE heuristic', detail: 'VLCC time-charter equivalent estimate derived from Worldscale flat-rate tables and published rate indices; not a live Baltic Exchange feed.' },
+                { label: 'Historical disruption events', detail: 'Curated timeline of past Hormuz disruptions (tanker wars, seizures, mine incidents) from public historical records.' },
+              ].map(({ label, detail }) => (
+                <div key={label} className="flex gap-3 bg-petro-bg rounded-lg px-4 py-3 border border-petro-border border-sky-400/20">
+                  <span className="text-sky-400 font-bold text-xs shrink-0 w-4">≈</span>
+                  <div>
+                    <p className="text-xs font-bold text-text-warm">{label}</p>
+                    <p className="text-xs text-text-faint mt-0.5">{detail}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* 5 — SIM sources */}
           <section>
             <div className="flex items-center gap-2 mb-3">
               <AlertTriangle size={14} className="text-petro-gold shrink-0" />
               <h3 className="text-xs font-bold text-petro-gold uppercase tracking-wide">
-                Simulated / Seeded Data
+                Simulated (SIM) Data
               </h3>
             </div>
             <p className="text-xs text-text-faint mb-3 leading-relaxed">
-              The following data are clearly labeled <span className="bg-petro-gold/20 text-petro-gold font-bold px-1 rounded border border-petro-gold/30 text-[10px] uppercase">SIM</span> in the UI.
-              They are generated from realistic but synthetic models and do <span className="font-semibold text-text-muted">not</span> reflect actual current vessel positions or market prices.
+              The free public AIS feed returns no vessel data for this region. All vessel-related panels are labeled <Badge type="SIM" /> and generated from a synthetic model seeded with realistic Gulf traffic patterns. They do <span className="font-semibold text-text-muted">not</span> reflect actual ship positions or movements.
             </p>
             <div className="space-y-2">
               {[
-                { label: 'Vessel positions / AIS', detail: 'The free AIS feed returns no data for this region. All vessel positions, dark fleet detections, ship-to-ship (STS) events, and floating storage are generated from a simulated model seeded with realistic traffic patterns.' },
-                { label: 'Bunker prices', detail: 'Fujairah bunker (VLSFO/IFO380) prices are seeded reference values, not live market quotes.' },
-                { label: 'Fujairah oil inventory', detail: 'Weekly inventory estimates are derived from a seeded baseline; no live data feed is connected.' },
-                { label: 'Insurance risk premium', detail: 'The geopolitical risk premium for Hormuz insurance is a baseline figure from open sources, updated manually, not a live Lloyd\'s / marine market feed.' },
+                { label: 'Live vessel positions', detail: 'Tanker, carrier, and naval vessel positions shown on the map are simulated.' },
+                { label: 'Dark-vessel detections', detail: 'AIS-dark events (AIS transponder off) are generated by the simulation model — not observed.' },
+                { label: 'Ship-to-ship (STS) transfers', detail: 'STS events used as a sanctions/diversion proxy are simulated.' },
+                { label: 'Floating storage', detail: 'Anchored VLCC floating-storage counts are derived from the simulation.' },
               ].map(({ label, detail }) => (
                 <div key={label} className="flex gap-3 bg-petro-bg rounded-lg px-4 py-3 border border-petro-border border-petro-gold/20">
                   <span className="text-petro-gold font-bold text-xs shrink-0 w-4">~</span>
@@ -113,33 +217,51 @@ export default function MethodologyModal({ open, onClose }: MethodologyModalProp
             </div>
           </section>
 
-          {/* Risk Index methodology */}
+          {/* 6 — Risk Index v2 */}
           <section>
             <h3 className="text-xs font-bold text-text-muted uppercase tracking-wide mb-3">
-              Hormuz Risk Index — Methodology
+              Hormuz Risk Index v2 — Methodology
             </h3>
             <p className="text-xs text-text-faint mb-3 leading-relaxed">
-              The Hormuz Risk Index is a composite 0–100 score aggregating five signal categories.
-              Each component is normalized to a 0–100 sub-score, then weighted as follows:
+              A transparent 0–100 composite score. Seven components are each normalized to a 0–100 sub-score and tier-tagged. Missing inputs are dropped and weights renormalized automatically.
+              Aggregation: <span className="text-text-warm font-semibold">0.65 × weighted mean + 0.35 × worst component</span> — the worst-component term ensures a single severe signal can lift the overall index even if other inputs are calm.
+              Output levels: <span className="text-petro-teal font-semibold">Low</span> · <span className="text-yellow-400 font-semibold">Elevated</span> · <span className="text-orange-400 font-semibold">High</span> · <span className="text-red-400 font-semibold">Severe</span>.
             </p>
             <div className="space-y-2">
               {[
-                { label: 'Oil flow deviation', weight: '30%', desc: 'Observed vs. EIA baseline throughput; large negative deviations increase risk' },
-                { label: 'Dark vessel activity', weight: '20%', desc: 'Rate of AIS-dark tankers in the strait (sanctions evasion / conflict indicator)' },
-                { label: 'Weather / Shamal winds', weight: '15%', desc: 'Wind speed and storm severity at Fujairah terminal affecting transit safety' },
-                { label: 'Insurance risk premium', weight: '15%', desc: 'War-risk and geopolitical premium in Hormuz hull / cargo insurance' },
-                { label: 'Disruption events', weight: '10%', desc: 'Active reported incidents (seizures, strikes, mine threats) in the strait' },
-                { label: 'STS / floating storage', weight: '10%', desc: 'Ship-to-ship transfer volume used as a sanctions / flow-diversion proxy' },
-              ].map(({ label, weight, desc }) => (
+                { label: 'Strait Flow', source: 'IMF PortWatch', tier: 'LIVE' as const, weight: '.22', desc: 'Chokepoint transit vessel counts vs. baseline; below-trend flow raises risk.' },
+                { label: 'Oil Volatility (OVX)', source: 'FRED', tier: 'LIVE' as const, weight: '.18', desc: 'CBOE Crude Oil Volatility Index — market-implied fear gauge for crude prices.' },
+                { label: 'News Pressure', source: 'Google News RSS', tier: 'LIVE' as const, weight: '.18', desc: 'Topic-weighted headline count from the Strait Intelligence Wire; conflict/sanction terms score higher.' },
+                { label: 'Shamal Wind', source: 'Open-Meteo', tier: 'LIVE' as const, weight: '.12', desc: 'Wind speed at Fujairah/Hormuz narrows; high Shamal conditions affect safe transit.' },
+                { label: 'War-Risk Insurance', source: 'Reference baseline', tier: 'EST' as const, weight: '.12', desc: 'Geopolitical premium in Hormuz hull/cargo insurance (manually updated).' },
+                { label: 'Seismic Activity', source: 'USGS', tier: 'LIVE' as const, weight: '.06', desc: 'Recent M2.5+ earthquake events near Gulf terminals.' },
+                { label: 'Anomaly Vessels', source: 'AIS simulation', tier: 'SIM' as const, weight: '.12', desc: 'Dark-vessel and STS anomaly rate from the vessel simulation model.' },
+              ].map(({ label, source, tier, weight, desc }) => (
                 <div key={label} className="flex gap-3 items-start bg-petro-bg rounded-lg px-4 py-3 border border-petro-border">
-                  <span className="text-petro-teal font-mono font-bold text-xs shrink-0 w-10 text-right">{weight}</span>
-                  <div>
-                    <p className="text-xs font-bold text-text-warm">{label}</p>
+                  <span className="text-petro-teal font-mono font-bold text-xs shrink-0 w-8 text-right pt-0.5">{weight}</span>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-xs font-bold text-text-warm">{label}</p>
+                      <Badge type={tier} />
+                      <span className="text-[10px] text-text-faint">{source}</span>
+                    </div>
                     <p className="text-xs text-text-faint mt-0.5">{desc}</p>
                   </div>
                 </div>
               ))}
             </div>
+          </section>
+
+          {/* 7 — Scenario calculator */}
+          <section>
+            <h3 className="text-xs font-bold text-text-muted uppercase tracking-wide mb-2">
+              What-If Scenario Calculator
+            </h3>
+            <p className="text-xs text-text-faint leading-relaxed">
+              The "What-If Hormuz Closes" model is <span className="text-text-warm font-semibold">illustrative only</span>.
+              It applies defensible public parameters from EIA and IEA analyses (bypass capacity, strategic reserve draw rates, demand elasticity) to estimate the directional impact of varying closure durations.
+              It is not a forecast, not a trading signal, and does not incorporate real-time market dynamics.
+            </p>
           </section>
 
           {/* Disclaimer */}
