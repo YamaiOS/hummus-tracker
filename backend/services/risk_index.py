@@ -1,104 +1,310 @@
-"""Hormuz Risk Index — transparent composite 0-100 score (higher = more risk/disruption)."""
+"""Hormuz Risk Index v2 — transparent composite 0-100 (higher = more risk).
+
+Aggregation: 0.65·weighted-arithmetic-mean + 0.35·worst-component over AVAILABLE
+components only (missing inputs are dropped; weights renormalized to those present).
+This compounds multiple stresses while ensuring one severe dimension (e.g. an active
+attack surge) is never masked by a calm one (e.g. benign seas). Pure geometric mean
+was rejected — it lets a near-zero component crush the index and understate real risk.
+"""
 from __future__ import annotations
 
+import asyncio
 import logging
-from datetime import datetime, timedelta, timezone
+import math
+from datetime import datetime, timezone
 from typing import Optional
 
 logger = logging.getLogger(__name__)
-
-# Component weights — must sum to 1.0
-_WEIGHTS = {
-    "strait_flow":   0.30,  # flow vs EIA baseline
-    "weather":       0.15,  # Shamal wind severity
-    "dark_vessels":  0.20,  # AIS-dark tanker count
-    "sts_events":    0.10,  # ship-to-ship transfer count
-    "insurance":     0.15,  # war-risk premium multiplier
-    "disruptions":   0.10,  # recent disruption severity / recency
-}
 
 
 def _clamp(v: float, lo: float = 0.0, hi: float = 100.0) -> float:
     return max(lo, min(hi, v))
 
 
-async def compute_risk_index() -> dict:
-    """Return a transparent 0-100 Hormuz Risk Index.
+def _aggregate(items: list[tuple[float, float]]) -> float:
+    """Risk-appropriate weighted aggregation: items = [(score, weight), ...].
 
-    Higher score = more risk/disruption.  Each component returns a 0-100
-    sub-score; the weighted sum forms the overall score.
+    Blends the weighted arithmetic mean (compounding effect of multiple stresses)
+    with the single worst component (so one severe dimension — e.g. an active
+    attack surge — is NOT masked by a calm dimension like benign seas). A pure
+    geometric mean was rejected here: it lets a near-zero component crush the
+    index even when other dimensions signal crisis, which understates risk.
+
+        score = 0.65 * weighted_mean + 0.35 * max_component
     """
+    if not items:
+        return 0.0
+    total_w = sum(w for _, w in items)
+    if total_w <= 0:
+        return 0.0
+    weighted_mean = sum(s * w for s, w in items) / total_w
+    worst = max(s for s, _ in items)
+    return 0.65 * weighted_mean + 0.35 * worst
+
+
+async def compute_risk_index() -> dict:
+    """Return a transparent 0-100 Hormuz Risk Index (v2).
+
+    Each component is scored 0-100 (higher = more risk).  Missing inputs are
+    dropped from the aggregation (not treated as 0).  Weights are renormalized
+    to available components only.
+    """
+
+    # ── Gather all inputs concurrently ──────────────────────────────────────
+    async def _safe(coro):
+        try:
+            return await coro
+        except Exception as exc:
+            logger.warning("risk_index: upstream gather failed: %s", exc)
+            return None
+
+    (
+        chokepoint_data,
+        volatility_data,
+        news_data,
+        seismic_data,
+        insurance_data,
+    ) = await asyncio.gather(
+        _safe(_get_chokepoint()),
+        _safe(_get_volatility()),
+        _safe(_get_news()),
+        _safe(_get_seismic()),
+        _safe(_get_insurance()),
+    )
+
     components: list[dict] = []
-    total_score = 0.0
 
-    # ── 1. Strait flow vs EIA baseline (30%) ────────────────────────────────
-    flow_score = 0.0
-    flow_detail = "No flow data available"
+    # ── 1. Flow disruption (weight .22, tier LIVE) ───────────────────────────
+    # Source: IMF PortWatch via get_chokepoint_comparison -> Hormuz pct_of_baseline
+    flow_result = _score_flow(chokepoint_data)
+    if flow_result is not None:
+        s, detail = flow_result
+        components.append({
+            "name": "Strait Flow",
+            "score_0_100": round(s, 1),
+            "weight": 0.22,
+            "tier": "LIVE",
+            "source": "IMF PortWatch",
+            "detail": detail,
+        })
+
+    # ── 2. Oil volatility (weight .18, tier LIVE) ────────────────────────────
+    # Source: FRED OVX
+    vol_result = _score_volatility(volatility_data)
+    if vol_result is not None:
+        s, detail = vol_result
+        components.append({
+            "name": "Oil Volatility",
+            "score_0_100": round(s, 1),
+            "weight": 0.18,
+            "tier": "LIVE",
+            "source": "FRED OVX",
+            "detail": detail,
+        })
+
+    # ── 3. News pressure (weight .18, tier LIVE) ─────────────────────────────
+    # Source: Google News
+    news_result = _score_news(news_data)
+    if news_result is not None:
+        s, detail = news_result
+        components.append({
+            "name": "News Pressure",
+            "score_0_100": round(s, 1),
+            "weight": 0.18,
+            "tier": "LIVE",
+            "source": "Google News",
+            "detail": detail,
+        })
+
+    # ── 4. Weather / Shamal (weight .12, tier LIVE) ──────────────────────────
+    # Source: Open-Meteo
+    weather_result = _score_weather()
+    if weather_result is not None:
+        s, detail = weather_result
+        components.append({
+            "name": "Shamal Wind",
+            "score_0_100": round(s, 1),
+            "weight": 0.12,
+            "tier": "LIVE",
+            "source": "Open-Meteo",
+            "detail": detail,
+        })
+
+    # ── 5. Insurance / war-risk (weight .12, tier EST) ───────────────────────
+    # Source: seeded / JWC-proxy
+    ins_result = _score_insurance(insurance_data)
+    if ins_result is not None:
+        s, detail = ins_result
+        components.append({
+            "name": "War Risk Insurance",
+            "score_0_100": round(s, 1),
+            "weight": 0.12,
+            "tier": "EST",
+            "source": "seeded/JWC-proxy",
+            "detail": detail,
+        })
+
+    # ── 6. Seismic (weight .06, tier LIVE) ───────────────────────────────────
+    # Source: USGS
+    seis_result = _score_seismic(seismic_data)
+    if seis_result is not None:
+        s, detail = seis_result
+        components.append({
+            "name": "Seismic Activity",
+            "score_0_100": round(s, 1),
+            "weight": 0.06,
+            "tier": "LIVE",
+            "source": "USGS FDSN",
+            "detail": detail,
+        })
+
+    # ── 7. Anomaly vessels: dark + STS (weight .12, tier SIM) ────────────────
+    # Source: simulated AIS
+    anm_result = _score_anomaly_vessels()
+    if anm_result is not None:
+        s, detail = anm_result
+        components.append({
+            "name": "Anomaly Vessels",
+            "score_0_100": round(s, 1),
+            "weight": 0.12,
+            "tier": "SIM",
+            "source": "simulated AIS",
+            "detail": detail,
+        })
+
+    # ── Aggregate (0.65·weighted-mean + 0.35·worst; renormalized) ───
+    agg_input = [(c["score_0_100"], c["weight"]) for c in components]
+    raw = _aggregate(agg_input)
+    score = int(round(_clamp(raw)))
+
+    if score < 25:
+        level = "low"
+    elif score < 50:
+        level = "elevated"
+    elif score < 75:
+        level = "high"
+    else:
+        level = "severe"
+
+    if not components:
+        summary = "Risk index unavailable — all data sources failed."
+    elif score < 25:
+        summary = "Strait of Hormuz operating within normal parameters."
+    else:
+        top = max(components, key=lambda c: c["score_0_100"] * c["weight"])
+        summary = f"Risk {level} — primary driver: {top['name']} ({top['detail']})"
+
+    return {
+        "score": score,
+        "level": level,
+        "summary": summary,
+        "components": components,
+        "methodology": (
+            "0.65·weighted-mean + 0.35·worst-component over available components; "
+            "weights renormalized; higher=more risk"
+        ),
+        "version": 2,
+        "computed_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+# ── Per-component scoring helpers ────────────────────────────────────────────
+# Each returns (score_0_100, detail_str) or None if no usable data.
+
+
+def _score_flow(chokepoint_data: Optional[dict]) -> Optional[tuple[float, str]]:
+    """Score = clamp(100 - pct_of_baseline, 0, 100) for Hormuz."""
     try:
-        from .eia import fetch_hormuz_flow
-        from ..database import SessionLocal
-        from ..models import VesselTransit
-        from sqlalchemy import select, func
-
-        baseline_data = await fetch_hormuz_flow()
-        baseline = float(baseline_data.get("baseline_mbpd") or 20.0)
-
-        cutoff_24h = datetime.utcnow() - timedelta(hours=24)
-        with SessionLocal() as db:
-            latest_subq = (
-                select(
-                    VesselTransit.mmsi,
-                    func.max(VesselTransit.observed_at).label("latest_time"),
-                )
-                .where(VesselTransit.observed_at >= cutoff_24h)
-                .where(VesselTransit.direction == "outbound")
-                .where(VesselTransit.is_loaded == True)
-                .group_by(VesselTransit.mmsi)
-                .subquery()
-            )
-            obs_barrels = db.execute(
-                select(func.coalesce(func.sum(VesselTransit.estimated_barrels), 0))
-                .join(
-                    latest_subq,
-                    (VesselTransit.mmsi == latest_subq.c.mmsi)
-                    & (VesselTransit.observed_at == latest_subq.c.latest_time),
-                )
-            ).scalar() or 0.0
-
-        current_flow = obs_barrels / 1_000_000  # convert to mbpd
-        if baseline > 0:
-            flow_ratio = current_flow / baseline
-            # 100% of baseline → risk 0; 0% flow → risk 100
-            # Risk rises steeply below 85% of baseline
-            if flow_ratio >= 0.85:
-                flow_score = 0.0
-            elif flow_ratio >= 0.60:
-                flow_score = _clamp((0.85 - flow_ratio) / 0.25 * 60)
-            else:
-                flow_score = _clamp(60 + (0.60 - flow_ratio) / 0.60 * 40)
-            flow_detail = (
-                f"{current_flow:.2f} mbpd vs {baseline:.1f} mbpd baseline "
-                f"({flow_ratio * 100:.0f}%)"
-            )
-        else:
-            flow_score = 0.0
-            flow_detail = "Baseline unavailable"
+        if not chokepoint_data:
+            return None
+        chokepoints = chokepoint_data.get("chokepoints", [])
+        hormuz = next(
+            (c for c in chokepoints if "hormuz" in (c.get("name") or "").lower()),
+            None,
+        )
+        if hormuz is None:
+            return None
+        pct = hormuz.get("pct_of_baseline")
+        if pct is None:
+            return None
+        score = _clamp(100.0 - float(pct))
+        latest = hormuz.get("latest_total")
+        date = hormuz.get("date") or ""
+        detail = (
+            f"{pct:.1f}% of 30-day baseline"
+            + (f" ({latest} transits, {date})" if latest is not None else "")
+        )
+        return score, detail
     except Exception as exc:
-        logger.warning("risk_index flow component failed: %s", exc)
-        flow_score = 0.0
-        flow_detail = f"Error: {exc}"
+        logger.warning("_score_flow failed: %s", exc)
+        return None
 
-    components.append({
-        "name": "Strait Flow",
-        "score_0_100": round(flow_score, 1),
-        "weight": _WEIGHTS["strait_flow"],
-        "detail": flow_detail,
-    })
-    total_score += flow_score * _WEIGHTS["strait_flow"]
 
-    # ── 2. Shamal wind (15%) ─────────────────────────────────────────────────
-    weather_score = 0.0
-    weather_detail = "No weather data available"
+def _score_volatility(vol: Optional[dict]) -> Optional[tuple[float, str]]:
+    """Map OVX zscore or regime to 0-100."""
+    try:
+        if not vol:
+            return None
+        zscore = vol.get("zscore")
+        regime = vol.get("regime", "unknown")
+        ovx = vol.get("ovx")
+
+        if zscore is not None:
+            score = _clamp(50.0 + 25.0 * float(zscore))
+        elif regime == "low":
+            score = 30.0
+        elif regime == "elevated":
+            score = 60.0
+        elif regime == "high":
+            score = 85.0
+        else:
+            return None
+
+        ovx_str = f"OVX {ovx:.1f}" if ovx is not None else "OVX n/a"
+        z_str = f", z={zscore:.2f}" if zscore is not None else ""
+        detail = f"{ovx_str}{z_str}, regime={regime}"
+        return score, detail
+    except Exception as exc:
+        logger.warning("_score_volatility failed: %s", exc)
+        return None
+
+
+def _score_news(articles: Optional[list]) -> Optional[tuple[float, str]]:
+    """Weight 48h articles by topic; normalize to 0-100 (cap at raw=20)."""
+    try:
+        if articles is None:
+            return None
+
+        TOPIC_WEIGHT = {
+            "attack": 3.0,
+            "sanctions": 2.0,
+            "geopolitics": 1.5,
+            "shipping": 1.0,
+            "energy": 0.5,
+        }
+        CAP = 20.0  # raw weighted sum at which score = 100
+
+        raw = 0.0
+        recent_count = 0
+        for a in articles:
+            if float(a.get("age_hours", 999)) <= 48:
+                topic = a.get("topic", "energy")
+                raw += TOPIC_WEIGHT.get(topic, 0.5)
+                recent_count += 1
+
+        if recent_count == 0 and not articles:
+            return None  # no data at all
+
+        score = _clamp(raw / CAP * 100.0)
+        detail = f"{recent_count} articles in 48h (weighted pressure {raw:.1f})"
+        return score, detail
+    except Exception as exc:
+        logger.warning("_score_news failed: %s", exc)
+        return None
+
+
+def _score_weather() -> Optional[tuple[float, str]]:
+    """Read TerminalWeather from DB; map max wind to 0-100."""
     try:
         from ..database import SessionLocal
         from ..models import TerminalWeather
@@ -106,39 +312,82 @@ async def compute_risk_index() -> dict:
         with SessionLocal() as db:
             terminals = db.query(TerminalWeather).all()
 
-        if terminals:
-            max_wind = max((t.wind_speed_knots or 0.0) for t in terminals)
-            alert_count = sum(1 for t in terminals if t.is_alert_active)
-            # <22kn = 0 risk; 22kn = moderate; >=30kn (shutdown) = 100
-            if max_wind < 22:
-                weather_score = 0.0
-            elif max_wind < 30:
-                weather_score = _clamp((max_wind - 22) / 8 * 60)
-            else:
-                weather_score = _clamp(60 + (max_wind - 30) / 20 * 40)
-            weather_detail = (
-                f"Max wind {max_wind:.1f} kn across {len(terminals)} terminals"
-                + (f"; {alert_count} alert(s) active" if alert_count else "")
-            )
+        if not terminals:
+            return None
+
+        max_wind = max((t.wind_speed_knots or 0.0) for t in terminals)
+        alert_count = sum(1 for t in terminals if t.is_alert_active)
+
+        if max_wind < 22:
+            score = 0.0
+        elif max_wind < 30:
+            score = _clamp((max_wind - 22) / 8 * 60)
+        else:
+            score = _clamp(60 + (max_wind - 30) / 20 * 40)
+
+        detail = (
+            f"Max wind {max_wind:.1f} kn across {len(terminals)} terminals"
+            + (f"; {alert_count} alert(s)" if alert_count else "")
+        )
+        return score, detail
     except Exception as exc:
-        logger.warning("risk_index weather component failed: %s", exc)
-        weather_score = 0.0
-        weather_detail = f"Error: {exc}"
+        logger.warning("_score_weather failed: %s", exc)
+        return None
 
-    components.append({
-        "name": "Shamal Wind",
-        "score_0_100": round(weather_score, 1),
-        "weight": _WEIGHTS["weather"],
-        "detail": weather_detail,
-    })
-    total_score += weather_score * _WEIGHTS["weather"]
 
-    # ── 3. Dark vessels (20%) ────────────────────────────────────────────────
-    dark_score = 0.0
-    dark_detail = "No dark vessel data"
+def _score_insurance(ins: Optional[dict]) -> Optional[tuple[float, str]]:
+    """Map insurance multiplier (1x-7x) to 0-100."""
+    try:
+        if not ins:
+            return None
+        multiplier = float(ins.get("multiplier") or 1.0)
+        premium_bps = float(ins.get("premium_bps") or 15.0)
+        score = _clamp((multiplier - 1.0) / 6.0 * 100)
+        detail = (
+            f"Premium {premium_bps:.0f} bps ({multiplier:.1f}x baseline); "
+            f"JWC: {ins.get('jwc_status', 'unknown')}"
+        )
+        return score, detail
+    except Exception as exc:
+        logger.warning("_score_insurance failed: %s", exc)
+        return None
+
+
+def _score_seismic(seis: Optional[dict]) -> Optional[tuple[float, str]]:
+    """Map max_mag to 0-100: <4=0, 4-5=30, 5-6=60, 6+=85."""
+    try:
+        if not seis:
+            return None
+        max_mag = seis.get("max_mag")
+        count = seis.get("count", 0)
+        window = seis.get("window_days", 14)
+
+        if max_mag is None:
+            score = 0.0
+            detail = f"No M≥4 events in last {window}d"
+        else:
+            mag = float(max_mag)
+            if mag < 4.0:
+                score = 0.0
+            elif mag < 5.0:
+                score = 30.0
+            elif mag < 6.0:
+                score = 60.0
+            else:
+                score = 85.0
+            detail = f"M{mag:.1f} max, {count} event(s) in last {window}d"
+
+        return score, detail
+    except Exception as exc:
+        logger.warning("_score_seismic failed: %s", exc)
+        return None
+
+
+def _score_anomaly_vessels() -> Optional[tuple[float, str]]:
+    """Dark + STS counts from DB; each dark vessel +15, each STS +20, cap 100."""
     try:
         from ..database import SessionLocal
-        from ..models import DarkVessel
+        from ..models import DarkVessel, STSEvent
         from sqlalchemy import func
 
         with SessionLocal() as db:
@@ -148,144 +397,43 @@ async def compute_risk_index() -> dict:
                 .scalar()
                 or 0
             )
-        # 0 = 0 risk; each vessel adds 15 points, cap at 100
-        dark_score = _clamp(dark_count * 15.0)
-        dark_detail = f"{dark_count} active dark vessel(s) detected"
-    except Exception as exc:
-        logger.warning("risk_index dark_vessels component failed: %s", exc)
-        dark_detail = f"Error: {exc}"
-
-    components.append({
-        "name": "Dark Vessels",
-        "score_0_100": round(dark_score, 1),
-        "weight": _WEIGHTS["dark_vessels"],
-        "detail": dark_detail,
-    })
-    total_score += dark_score * _WEIGHTS["dark_vessels"]
-
-    # ── 4. STS events (10%) ──────────────────────────────────────────────────
-    sts_score = 0.0
-    sts_detail = "No STS data"
-    try:
-        from ..database import SessionLocal
-        from ..models import STSEvent
-        from sqlalchemy import func
-
-        with SessionLocal() as db:
             sts_count = (
                 db.query(func.count(STSEvent.id))
                 .filter(STSEvent.is_active == True)
                 .scalar()
                 or 0
             )
-        sts_score = _clamp(sts_count * 20.0)
-        sts_detail = f"{sts_count} active STS transfer event(s)"
+
+        score = _clamp(dark_count * 15.0 + sts_count * 20.0)
+        detail = f"{dark_count} dark vessel(s), {sts_count} STS event(s) (simulated)"
+        return score, detail
     except Exception as exc:
-        logger.warning("risk_index sts component failed: %s", exc)
-        sts_detail = f"Error: {exc}"
+        logger.warning("_score_anomaly_vessels failed: %s", exc)
+        return None
 
-    components.append({
-        "name": "STS Events",
-        "score_0_100": round(sts_score, 1),
-        "weight": _WEIGHTS["sts_events"],
-        "detail": sts_detail,
-    })
-    total_score += sts_score * _WEIGHTS["sts_events"]
 
-    # ── 5. Insurance / war-risk multiplier (15%) ─────────────────────────────
-    ins_score = 0.0
-    ins_detail = "No insurance data"
-    try:
-        from .insurance import get_insurance_status
+# ── Thin async wrappers for concurrent gather ────────────────────────────────
 
-        ins = await get_insurance_status()
-        multiplier = float(ins.get("multiplier") or 1.0)
-        premium_bps = float(ins.get("premium_bps") or 15.0)
-        baseline_bps = float(ins.get("baseline_bps") or 15.0)
-        # multiplier 1x = 0 risk; 7x+ = 100 risk (linear scale)
-        ins_score = _clamp((multiplier - 1.0) / 6.0 * 100)
-        ins_detail = (
-            f"Premium {premium_bps:.0f} bps ({multiplier:.1f}x baseline); "
-            f"JWC: {ins.get('jwc_status', 'unknown')}"
-        )
-    except Exception as exc:
-        logger.warning("risk_index insurance component failed: %s", exc)
-        ins_detail = f"Error: {exc}"
+async def _get_chokepoint() -> dict:
+    from .chokepoints import get_chokepoint_comparison
+    return await get_chokepoint_comparison()
 
-    components.append({
-        "name": "War Risk Insurance",
-        "score_0_100": round(ins_score, 1),
-        "weight": _WEIGHTS["insurance"],
-        "detail": ins_detail,
-    })
-    total_score += ins_score * _WEIGHTS["insurance"]
 
-    # ── 6. Recent disruptions weighted by recency + impact (10%) ─────────────
-    dis_score = 0.0
-    dis_detail = "No recent disruption events"
-    try:
-        from ..database import SessionLocal
-        from ..models import DisruptionEvent
+async def _get_volatility() -> dict:
+    from .volatility import get_oil_volatility
+    return await get_oil_volatility()
 
-        cutoff = (datetime.utcnow() - timedelta(days=30)).strftime("%Y-%m-%d")
-        with SessionLocal() as db:
-            events = (
-                db.query(DisruptionEvent)
-                .filter(DisruptionEvent.date >= cutoff)
-                .all()
-            )
 
-        if events:
-            today = datetime.utcnow().date()
-            severity_map = {"critical": 1.0, "high": 0.7, "medium": 0.4, "low": 0.15}
-            weighted_sum = 0.0
-            for ev in events:
-                try:
-                    ev_date = datetime.strptime(ev.date, "%Y-%m-%d").date()
-                    days_ago = max(0, (today - ev_date).days)
-                except Exception:
-                    days_ago = 15
-                recency_weight = max(0.1, 1.0 - days_ago / 30.0)
-                sev = severity_map.get(str(ev.severity).lower(), 0.2)
-                impact = abs(float(ev.brent_impact_pct or 0)) / 15.0  # 15% impact = 1.0
-                combined = (sev * 0.5 + recency_weight * 0.3 + min(impact, 1.0) * 0.2)
-                weighted_sum = max(weighted_sum, combined)
+async def _get_news() -> list:
+    from .news import fetch_strait_news
+    return await fetch_strait_news()
 
-            dis_score = _clamp(weighted_sum * 100)
-            dis_detail = f"{len(events)} disruption event(s) in last 30 days"
-    except Exception as exc:
-        logger.warning("risk_index disruptions component failed: %s", exc)
-        dis_detail = f"Error: {exc}"
 
-    components.append({
-        "name": "Disruption Events",
-        "score_0_100": round(dis_score, 1),
-        "weight": _WEIGHTS["disruptions"],
-        "detail": dis_detail,
-    })
-    total_score += dis_score * _WEIGHTS["disruptions"]
+async def _get_seismic() -> dict:
+    from .seismic import get_regional_seismicity
+    return await get_regional_seismicity()
 
-    # ── Final score + level label ────────────────────────────────────────────
-    score = int(round(_clamp(total_score)))
-    if score < 20:
-        level = "low"
-    elif score < 45:
-        level = "elevated"
-    elif score < 70:
-        level = "high"
-    else:
-        level = "severe"
 
-    top_driver = max(components, key=lambda c: c["score_0_100"] * c["weight"])
-    if score < 20:
-        summary = "Strait of Hormuz operating within normal parameters."
-    else:
-        summary = f"Risk elevated — primary driver: {top_driver['name']} ({top_driver['detail']})"
-
-    return {
-        "score": score,
-        "level": level,
-        "summary": summary,
-        "components": components,
-        "computed_at": datetime.now(timezone.utc).isoformat(),
-    }
+async def _get_insurance() -> dict:
+    from .insurance import get_insurance_status
+    return await get_insurance_status()
