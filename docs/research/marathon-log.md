@@ -27,3 +27,13 @@ geometric — masked crisis). Live score 72/high. Backward-compatible output.
 
 ### Next: Wave 4 (scenario calculator), Wave 5 (data-quality tier badges in UI +
 ### methodology refresh), Wave 6 (GPR index, Qatar LNG disruption banner, EU gas storage).
+
+## Waves 4-6 (DONE, deployed 2026-06-15T23:40:48.788311+00:00)
+- W4: "What-If Hormuz Closes" scenario calculator (client-side; sliders → supply
+  removed, Brent range, stock-buffer days; EIA/IEA params).
+- W5: data-quality tier badges (LIVE/EST/SIM) on 31 panels + methodology modal refresh.
+- W6: GPR geopolitical-risk index (/api/gpr, Caldara-Iacoviello via xlrd) + GPRPanel;
+  Qatar LNG disruption banner (derived from Hormuz chokepoint deviation). 36 endpoints.
+- QA: 0 console/page/network errors, no panel overlaps. Risk Index v2 live (72/high).
+### Next: W7 EIA OPEC/Iran/Saudi production context + GPS/AIS-integrity banner;
+### W8 risk decomposition + MARAD/UKMTO official incident feed.
