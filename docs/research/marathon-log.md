@@ -19,3 +19,11 @@ seismic (USGS), marine (Open-Meteo). 35 snapshot endpoints. Verified live, 0 err
 - Wave 5: Data-quality tier badges across panels + methodology modal refresh.
 - Wave 6: GPR index integration; Qatar LNG disruption status banner; EU gas storage (GIE key).
 - Ongoing: Playwright QA (errors/overlap/interaction) each wave; deploy+refresh.
+
+## Wave 3 — Risk Index v2 (DONE, deployed 2026-06-15T22:56:46.023166+00:00)
+Rebuilt composite: 7 components, 6 LIVE (flow/OVX/news/weather/seismic) + 1 EST + 1 SIM,
+each tier-tagged with source. Aggregation 0.65·weighted-mean + 0.35·worst (rejected pure
+geometric — masked crisis). Live score 72/high. Backward-compatible output.
+
+### Next: Wave 4 (scenario calculator), Wave 5 (data-quality tier badges in UI +
+### methodology refresh), Wave 6 (GPR index, Qatar LNG disruption banner, EU gas storage).
