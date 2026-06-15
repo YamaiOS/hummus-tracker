@@ -10,7 +10,7 @@ import SupplyChainImpact from '../../components/SupplyChainImpact'
 export default function MarketTab() {
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
         <div className="lg:col-span-2">
           <Panel
             title="Brent-Dubai Spread"
