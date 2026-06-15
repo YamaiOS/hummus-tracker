@@ -5,6 +5,7 @@ Uses the Daily_Chokepoints_Data ArcGIS FeatureServer.
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 from datetime import datetime, timezone
@@ -40,17 +41,33 @@ async def fetch_hormuz_transits(days: int = 90) -> List[Dict]:
         "f": "json",
     }
 
-    try:
-        async with httpx.AsyncClient(timeout=20.0) as client:
-            resp = await client.get(_CHOKEPOINT_URL, params=params)
-            resp.raise_for_status()
-            payload = resp.json()
-    except Exception as e:
-        logger.error("IMF PortWatch Hormuz fetch failed: %s", e)
-        return []
+    # Retry a couple of times — the ArcGIS endpoint is occasionally slow, and a
+    # transient failure must NOT blank the dashboard. On total failure we fall
+    # back to the last good cached result (even if the TTL has expired).
+    payload = None
+    last_err: Exception | None = None
+    for attempt in range(3):
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                resp = await client.get(_CHOKEPOINT_URL, params=params)
+                resp.raise_for_status()
+                payload = resp.json()
+            if "error" in payload:
+                last_err = Exception(payload["error"])
+                payload = None
+            else:
+                break
+        except Exception as e:  # noqa: BLE001
+            last_err = e
+        if attempt < 2:
+            await asyncio.sleep(1.5 * (attempt + 1))
 
-    if "error" in payload:
-        logger.error("IMF PortWatch API error: %s", payload["error"])
+    if payload is None:
+        stale = _cache.get(cache_key)
+        if stale and stale[0]:
+            logger.warning("IMF PortWatch fetch failed (%s); serving stale cached data.", last_err)
+            return stale[0]
+        logger.error("IMF PortWatch Hormuz fetch failed with no cache: %s", last_err)
         return []
 
     features = payload.get("features", [])
@@ -58,13 +75,17 @@ async def fetch_hormuz_transits(days: int = 90) -> List[Dict]:
     for feat in features:
         attrs = feat.get("attributes", {})
         try:
-            date_ms = attrs.get("date")
-            if date_ms:
+            # ArcGIS may return `date` as epoch-ms (int) or an ISO string
+            # ("2026-06-07") depending on the service's date-format setting.
+            date_val = attrs.get("date")
+            if date_val in (None, ""):
+                continue
+            if isinstance(date_val, (int, float)):
                 date_str = datetime.fromtimestamp(
-                    date_ms / 1000, tz=timezone.utc
+                    date_val / 1000, tz=timezone.utc
                 ).strftime("%Y-%m-%d")
             else:
-                continue
+                date_str = str(date_val)[:10]
 
             n_total = attrs.get("n_total", 0)
             if n_total > 50: # Outlier filtering for Feb 28 spike

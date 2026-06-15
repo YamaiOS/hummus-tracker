@@ -18,6 +18,15 @@ export default function TransitChart() {
 
   const transits = data?.transits ?? []
 
+  if (transits.length === 0) {
+    return (
+      <div className="h-[300px] flex flex-col items-center justify-center gap-1.5 text-center px-4">
+        <span className="text-xs text-text-faint uppercase font-bold tracking-wide">No transit data available</span>
+        <span className="text-[11px] text-text-faint/70 font-medium">IMF PortWatch feed temporarily unavailable — retries hourly</span>
+      </div>
+    )
+  }
+
   return (
     <div className="h-[300px]">
       <ResponsiveContainer width="100%" height="100%">
