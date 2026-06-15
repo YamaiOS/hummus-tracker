@@ -9,6 +9,7 @@ import DisruptionTimeline from '../../components/DisruptionTimeline'
 import IntelligenceBriefPanel from '../../components/IntelligenceBriefPanel'
 import ChokepointComparison from '../../components/ChokepointComparison'
 import BypassGauge from '../../components/BypassGauge'
+import ScenarioCalculator from '../../components/ScenarioCalculator'
 
 export default function AnalyticsTab() {
   return (
@@ -30,6 +31,15 @@ export default function AnalyticsTab() {
           <BypassGauge />
         </Panel>
       </div>
+
+      {/* Scenario Calculator — interactive supply-shock model */}
+      <Panel
+        title="Scenario Calculator — What If Hormuz Closes?"
+        subtitle="Interactive supply-shock &amp; price-impact model"
+        footer="ILLUSTRATIVE · EIA/IEA PUBLIC PARAMETERS · NOT A FORECAST"
+      >
+        <ScenarioCalculator />
+      </Panel>
 
       {/* Risk Index + Metric History — flagship analytics row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
