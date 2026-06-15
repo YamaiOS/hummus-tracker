@@ -7,6 +7,7 @@ import MethodologyModal from '../components/MethodologyModal'
 import CommandCenter from '../components/CommandCenter'
 import ControlBar from '../components/ControlBar'
 import QatarLngBanner from '../components/QatarLngBanner'
+import IntegrityBanner from '../components/IntegrityBanner'
 import ActionCenter from '../components/ActionCenter'
 import { FilterProvider } from '../context/FilterContext'
 import { fetchOverview } from '../api/client'
@@ -163,6 +164,8 @@ export default function Dashboard() {
       <main className="max-w-[1600px] mx-auto px-4 sm:px-6 py-6 space-y-4">
         {/* Qatar LNG disruption banner — shown only when Hormuz transits are depressed */}
         <QatarLngBanner />
+        {/* GPS/GNSS integrity banner — shown only when active disruption reported */}
+        <IntegrityBanner />
         {/* Command center — hero situational picture */}
         <CommandCenter />
 

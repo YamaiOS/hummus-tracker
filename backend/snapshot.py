@@ -78,6 +78,8 @@ ENDPOINTS: list[str] = [
     "/api/seismic",
     "/api/marine",
     "/api/gpr",
+    "/api/production",
+    "/api/integrity",
 ]
 
 

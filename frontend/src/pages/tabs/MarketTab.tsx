@@ -1,4 +1,5 @@
 import Panel from '../../components/Panel'
+import ProductionPanel from '../../components/ProductionPanel'
 import MarketMetricsPanel from '../../components/MarketMetricsPanel'
 import FujairahInventoryPanel from '../../components/FujairahInventoryPanel'
 import OPECCompliancePanel from '../../components/OPECCompliancePanel'
@@ -51,6 +52,13 @@ export default function MarketTab() {
           </Panel>
           <Panel title="OPEC+ Compliance" subtitle="Quota vs observed exports (7-day)" tier="EST">
             <OPECCompliancePanel />
+          </Panel>
+          <Panel
+            title="OPEC & Gulf Production"
+            subtitle="Crude + liquids output by producer (EIA)"
+            tier="LIVE"
+          >
+            <ProductionPanel />
           </Panel>
           <Panel title="Top Destinations" subtitle="Outbound cargo flow by region" tier="SIM">
             <TopDestinations />

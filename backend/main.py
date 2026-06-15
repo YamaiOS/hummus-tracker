@@ -219,6 +219,20 @@ async def gpr():
     return await get_gpr()
 
 
+@app.get("/api/production")
+async def production():
+    """OPEC & Gulf crude+liquids production by producer (EIA International)."""
+    from .services.production import get_producer_output
+    return await get_producer_output()
+
+
+@app.get("/api/integrity")
+async def integrity():
+    """GPS/AIS data-integrity signal derived from current news (jamming/spoofing)."""
+    from .services.integrity import get_data_integrity
+    return await get_data_integrity()
+
+
 @app.get("/api/overview")
 async def overview():
     """Dashboard overview — key metrics for the Hormuz strait.

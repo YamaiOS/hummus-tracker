@@ -511,3 +511,41 @@ export interface GPR {
 }
 
 export const fetchGPR = () => api.get<GPR>('/gpr').then(r => r.data)
+
+// ── Production ────────────────────────────────────────────────────────────────
+
+export interface ProducerOutput {
+  country: string
+  code: string
+  mbpd: number
+  period: string
+}
+
+export interface Production {
+  producers: ProducerOutput[]
+  opec_total_mbpd: number | null
+  source: string
+  updated_at: string
+}
+
+export const fetchProduction = () => api.get<Production>('/production').then(r => r.data)
+
+// ── Data Integrity ────────────────────────────────────────────────────────────
+
+export interface IntegrityHeadline {
+  title: string
+  url: string
+  source: string
+  age_hours: number
+}
+
+export interface DataIntegrity {
+  gps_disruption_active: boolean
+  mention_count: number
+  headlines: IntegrityHeadline[]
+  note: string
+  source: string
+  updated_at: string
+}
+
+export const fetchIntegrity = () => api.get<DataIntegrity>('/integrity').then(r => r.data)
