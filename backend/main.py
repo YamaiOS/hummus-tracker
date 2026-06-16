@@ -233,6 +233,13 @@ async def integrity():
     return await get_data_integrity()
 
 
+@app.get("/api/incidents")
+async def incidents():
+    """Structured maritime security-incident timeline (press-reported, classified)."""
+    from .services.incidents import get_incidents
+    return await get_incidents()
+
+
 @app.get("/api/overview")
 async def overview():
     """Dashboard overview — key metrics for the Hormuz strait.

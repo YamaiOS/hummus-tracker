@@ -80,6 +80,7 @@ ENDPOINTS: list[str] = [
     "/api/gpr",
     "/api/production",
     "/api/integrity",
+    "/api/incidents",
 ]
 
 

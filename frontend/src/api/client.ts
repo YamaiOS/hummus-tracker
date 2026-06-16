@@ -549,3 +549,24 @@ export interface DataIntegrity {
 }
 
 export const fetchIntegrity = () => api.get<DataIntegrity>('/integrity').then(r => r.data)
+
+// ── Security Incidents ────────────────────────────────────────────────────────
+
+export interface Incident {
+  date: string
+  title: string
+  source: string
+  url: string
+  type: string
+  severity: 'critical' | 'high' | 'warning'
+  age_hours: number
+}
+
+export interface Incidents {
+  incidents: Incident[]
+  count: number
+  source: string
+  updated_at: string
+}
+
+export const fetchIncidents = () => api.get<Incidents>('/incidents').then(r => r.data)

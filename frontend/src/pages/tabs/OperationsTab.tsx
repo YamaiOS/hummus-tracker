@@ -10,6 +10,7 @@ import VesselTable from '../../components/VesselTable'
 import NewsWire from '../../components/NewsWire'
 import SeismicPanel from '../../components/SeismicPanel'
 import MarinePanel from '../../components/MarinePanel'
+import IncidentTimeline from '../../components/IncidentTimeline'
 
 interface OperationsTabProps {
   darkVesselCount: number
@@ -44,6 +45,15 @@ export default function OperationsTab({ darkVesselCount }: OperationsTabProps) {
 
       <Panel title="Strait Intelligence Wire" subtitle="Live Hormuz & Gulf shipping headlines" tier="LIVE">
         <NewsWire />
+      </Panel>
+
+      <Panel
+        title="Maritime Security Incidents"
+        subtitle="Press-reported kinetic incidents — Hormuz & Gulf"
+        footer="POLLED EVERY 5 MIN · PRESS SOURCES"
+        tier="LIVE"
+      >
+        <IncidentTimeline />
       </Panel>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

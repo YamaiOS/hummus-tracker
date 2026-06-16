@@ -11,6 +11,7 @@ import ChokepointComparison from '../../components/ChokepointComparison'
 import BypassGauge from '../../components/BypassGauge'
 import ScenarioCalculator from '../../components/ScenarioCalculator'
 import GPRPanel from '../../components/GPRPanel'
+import RiskDecomposition from '../../components/RiskDecomposition'
 
 export default function AnalyticsTab() {
   return (
@@ -72,6 +73,16 @@ export default function AnalyticsTab() {
           <MetricHistoryChart />
         </Panel>
       </div>
+
+      {/* Risk Decomposition — what's driving the Risk Index */}
+      <Panel
+        title="Risk Decomposition"
+        subtitle="What's driving the Hormuz Risk Index (component contribution)"
+        footer="POLLED EVERY 5 MIN · CONTRIBUTION = SCORE × WEIGHT"
+        tier="LIVE"
+      >
+        <RiskDecomposition />
+      </Panel>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
         <div className="lg:col-span-2">
