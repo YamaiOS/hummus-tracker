@@ -87,3 +87,14 @@ Deferred: GIE EU gas storage (needs key), MARAD/UKMTO (WAF-403), real Gulf AIS (
 ## Strategy sprint 2026-06-16T22:48:09.163786+00:00 — distribution + moat + liability + backtest (4 Opus think→4 Opus build)
 RSS /feed.xml + /card.svg; atomic writes + history validation; disclaimer/ToS; /api/backtest event study.
 40 endpoints, 17 tests pass, 0 errors/overlaps. Deferred: demote SIM map, Telegram push, Fly scheduled refresh.
+
+## Follow-up sprint 2026-06-16T23:18:44.547131+00:00 (Opus agents) — trust + distribution + reliability
+- Real "Strait Transit Monitor" (IMF PortWatch) now LEADS Operations; simulated vessel
+  map DEMOTED to a labeled "Vessel Map (Simulated Demo)" — #1 reputational fix.
+- Telegram daily digest (alerts.send_daily_digest) wired into snapshot; no-ops until
+  TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID secrets set (create bot via @BotFather).
+- RELIABLE REFRESH: Fly scheduled machine 'hourly-refresh-cron' (curlimages/curl,
+  --entrypoint /bin/sh, --schedule hourly, 256MB, region sin) POSTs the token-protected
+  /api/internal/refresh hourly — verified end-to-end (auth ok, snapshot advanced).
+  GitHub Actions cron retained as backup; refresh lock prevents double-runs.
+- QA: 0 errors, no real overlaps, 17 tests pass.
