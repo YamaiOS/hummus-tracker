@@ -54,3 +54,11 @@ geometric — masked crisis). Live score 72/high. Backward-compatible output.
 - GIE EU gas storage: confirmed needs registered key → DEFERRED.
 ## Wave 10: methodology modal refresh (incidents/production/integrity/GPR-in-index/
 ## decomposition/scenario) + chart regime bands. Then final QA + summary near 6h.
+
+## Wave 10 (DONE, deployed 2026-06-16T00:35:48.684387+00:00) — coherence/polish
+- Methodology modal: full source list + derived-signals section + 8-component index.
+- Chart regime bands (risk/OVX/GPR). All 3 tabs visually reviewed: coherent, no overlaps.
+- 1.78h elapsed. Feature backlog now largely blocked (EU storage=key, official feeds=WAF,
+  real AIS=paid). PIVOTING remaining marathon time to HARDENING (higher value than padding):
+## Wave 11+: persistent alerts for new signals (OVX/GPR/incident/chokepoint), backend
+## pytest smoke tests for the 13 new services, bundle/perf check. Then final QA + summary.
