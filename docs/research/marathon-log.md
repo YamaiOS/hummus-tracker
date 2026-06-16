@@ -75,3 +75,4 @@ geometric — masked crisis). Live score 72/high. Backward-compatible output.
 All 39 endpoints 200, 0 console/page/net errors, no panel overlaps. Triggered a
 refresh (GitHub scheduled cron is best-effort/bursty — 00:26 run fired; 01:00/02:00
 delayed by GH). App hardened + healthy. Holding for the 6h final summary.
+## Checkpoint 2026-06-16T03:27:26.155821+00:00 (4.6h) — all green: 39 endpoints 200, 0 errors, no overlaps; refreshed.
