@@ -83,3 +83,7 @@ delayed by GH). App hardened + healthy. Holding for the 6h final summary.
 Final QA: 0 console/page/net errors, no panel overlaps, 17 pytest passed, mobile clean,
 bundle healthy. Still $0 scale-to-zero. Live: https://oil.yieldwise.my.
 Deferred: GIE EU gas storage (needs key), MARAD/UKMTO (WAF-403), real Gulf AIS (paid → vessels SIM).
+
+## Strategy sprint 2026-06-16T22:48:09.163786+00:00 — distribution + moat + liability + backtest (4 Opus think→4 Opus build)
+RSS /feed.xml + /card.svg; atomic writes + history validation; disclaimer/ToS; /api/backtest event study.
+40 endpoints, 17 tests pass, 0 errors/overlaps. Deferred: demote SIM map, Telegram push, Fly scheduled refresh.
