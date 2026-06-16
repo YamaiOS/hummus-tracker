@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import {
-  ResponsiveContainer, LineChart, Line, Tooltip,
+  ResponsiveContainer, LineChart, Line, Tooltip, ReferenceLine, YAxis, ReferenceArea,
 } from 'recharts'
 import { fetchVolatility } from '../api/client'
 
@@ -72,6 +72,13 @@ export default function VolatilityWidget() {
         <div className="h-[90px]">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={history} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
+              <YAxis domain={['auto', 'auto']} hide />
+              {/* Faint calm/stressed vol bands */}
+              <ReferenceArea y1={0}  y2={40} fill="#2dd4bf" fillOpacity={0.06} ifOverflow="hidden" />
+              <ReferenceArea y1={60} y2={200} fill="#ef4444" fillOpacity={0.06} ifOverflow="hidden" />
+              {/* Threshold reference lines */}
+              <ReferenceLine y={40} stroke="#2dd4bf" strokeDasharray="3 3" strokeOpacity={0.4} strokeWidth={1} />
+              <ReferenceLine y={60} stroke="#ef4444" strokeDasharray="3 3" strokeOpacity={0.4} strokeWidth={1} />
               <Tooltip
                 contentStyle={{
                   backgroundColor: '#0f1d32',

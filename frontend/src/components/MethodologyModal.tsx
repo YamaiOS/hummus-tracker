@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { X, CheckCircle2, AlertTriangle, Info, HelpCircle } from 'lucide-react'
+import { X, CheckCircle2, AlertTriangle, Info, HelpCircle, Cpu } from 'lucide-react'
 
 interface MethodologyModalProps {
   open: boolean
@@ -126,7 +126,7 @@ export default function MethodologyModal({ open, onClose }: MethodologyModalProp
                 },
                 {
                   source: 'EIA (U.S. Energy Information Administration)',
-                  provides: 'Petroleum supply/demand statistics; Strait of Hormuz throughput baseline reference (~20 mbpd).',
+                  provides: 'Petroleum supply/demand statistics; OPEC and Gulf state crude and liquids production by country; Strait of Hormuz throughput baseline reference (~20 mbpd).',
                 },
                 {
                   source: 'IMF PortWatch',
@@ -142,7 +142,11 @@ export default function MethodologyModal({ open, onClose }: MethodologyModalProp
                 },
                 {
                   source: 'Google News RSS',
-                  provides: 'Live Strait Intelligence Wire — headline feed filtered for Hormuz/Gulf geopolitical terms, updated each pipeline run.',
+                  provides: 'Strait Intelligence Wire — headline feed filtered for Hormuz/Gulf geopolitical terms, updated each pipeline run. Also drives the maritime security-incident timeline: MARAD/UKMTO official advisories are access-restricted, so incidents are press-reported via this feed and clearly labeled accordingly.',
+                },
+                {
+                  source: 'Caldara-Iacoviello GPR Index',
+                  provides: 'Peer-reviewed Geopolitical Risk Index (monthly), constructed from automated text-search counts in major newspapers. Captures global conflict/tensions that feed through to energy markets. Published by the Federal Reserve.',
                 },
               ].map(({ source, provides }) => (
                 <div key={source} className="flex gap-3 bg-petro-bg rounded-lg px-4 py-3 border border-petro-border">
@@ -217,13 +221,54 @@ export default function MethodologyModal({ open, onClose }: MethodologyModalProp
             </div>
           </section>
 
-          {/* 6 — Risk Index v2 */}
+          {/* 6 — Derived / computed signals */}
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <Cpu size={14} className="text-purple-400 shrink-0" />
+              <h3 className="text-xs font-bold text-purple-400 uppercase tracking-wide">
+                Derived &amp; Computed Signals
+              </h3>
+            </div>
+            <p className="text-xs text-text-faint mb-3 leading-relaxed">
+              The following outputs are computed by the pipeline from the raw source data above. They are not fetched from any external provider.
+            </p>
+            <div className="space-y-2">
+              {[
+                {
+                  label: 'GPS/AIS Data-Integrity Signal',
+                  detail: 'Flags periods when news reporting indicates GPS jamming or AIS spoofing activity in the Gulf. When active, AIS-derived transit counts and vessel positions may be understated or unreliable — a caveat note is shown on affected panels.',
+                },
+                {
+                  label: 'Bypass Supply-Gap Model',
+                  detail: 'Estimates the volume gap that cannot be bypassed if Hormuz were disrupted, based on static EIA/CNBC pipeline capacity figures (UAE Habshan–Fujairah, Saudi Petroline, Iraq–Turkey). Not a live calculation; updates when EST baseline figures change.',
+                },
+                {
+                  label: '"What-If Hormuz Closes" Scenario Calculator',
+                  detail: 'Illustrative scenario tool only — not a forecast or trading signal. Applies published EIA and IEA parameters (bypass capacity, strategic reserve draw rates, demand elasticity) to estimate directional impact across user-selectable closure durations. All outputs carry an explicit illustrative disclaimer.',
+                },
+                {
+                  label: 'Risk Index Component Decomposition',
+                  detail: 'For each of the 8 Risk Index components, the pipeline computes the individual contribution as (sub-score × weight). The decomposition bar chart shows which signals are currently driving the overall index level.',
+                },
+              ].map(({ label, detail }) => (
+                <div key={label} className="flex gap-3 bg-petro-bg rounded-lg px-4 py-3 border border-petro-border border-purple-400/20">
+                  <span className="text-purple-400 font-bold text-xs shrink-0 w-4">∫</span>
+                  <div>
+                    <p className="text-xs font-bold text-text-warm">{label}</p>
+                    <p className="text-xs text-text-faint mt-0.5">{detail}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* 7 — Risk Index v2 */}
           <section>
             <h3 className="text-xs font-bold text-text-muted uppercase tracking-wide mb-3">
               Hormuz Risk Index v2 — Methodology
             </h3>
             <p className="text-xs text-text-faint mb-3 leading-relaxed">
-              A transparent 0–100 composite score. Seven components are each normalized to a 0–100 sub-score and tier-tagged. Missing inputs are dropped and weights renormalized automatically.
+              A transparent 0–100 composite score. Eight components are each normalized to a 0–100 sub-score and tier-tagged. Missing inputs are dropped and weights renormalized automatically.
               Aggregation: <span className="text-text-warm font-semibold">0.65 × weighted mean + 0.35 × worst component</span> — the worst-component term ensures a single severe signal can lift the overall index even if other inputs are calm.
               Output levels: <span className="text-petro-teal font-semibold">Low</span> · <span className="text-yellow-400 font-semibold">Elevated</span> · <span className="text-orange-400 font-semibold">High</span> · <span className="text-red-400 font-semibold">Severe</span>.
             </p>
@@ -234,6 +279,7 @@ export default function MethodologyModal({ open, onClose }: MethodologyModalProp
                 { label: 'News Pressure', source: 'Google News RSS', tier: 'LIVE' as const, weight: '.18', desc: 'Topic-weighted headline count from the Strait Intelligence Wire; conflict/sanction terms score higher.' },
                 { label: 'Shamal Wind', source: 'Open-Meteo', tier: 'LIVE' as const, weight: '.12', desc: 'Wind speed at Fujairah/Hormuz narrows; high Shamal conditions affect safe transit.' },
                 { label: 'War-Risk Insurance', source: 'Reference baseline', tier: 'EST' as const, weight: '.12', desc: 'Geopolitical premium in Hormuz hull/cargo insurance (manually updated).' },
+                { label: 'Geopolitical Risk (GPR)', source: 'Caldara-Iacoviello', tier: 'LIVE' as const, weight: '.10', desc: 'Peer-reviewed monthly GPR index; elevated readings reflect heightened global conflict tensions feeding into energy market risk.' },
                 { label: 'Seismic Activity', source: 'USGS', tier: 'LIVE' as const, weight: '.06', desc: 'Recent M2.5+ earthquake events near Gulf terminals.' },
                 { label: 'Anomaly Vessels', source: 'AIS simulation', tier: 'SIM' as const, weight: '.12', desc: 'Dark-vessel and STS anomaly rate from the vessel simulation model.' },
               ].map(({ label, source, tier, weight, desc }) => (
@@ -250,9 +296,12 @@ export default function MethodologyModal({ open, onClose }: MethodologyModalProp
                 </div>
               ))}
             </div>
+            <p className="text-xs text-text-faint mt-3 leading-relaxed">
+              <span className="text-text-muted font-semibold">Note on official advisories:</span> MARAD and UKMTO maritime security advisories are access-restricted. Incidents are sourced from press reporting via Google News RSS and are clearly labeled as press-reported throughout the dashboard.
+            </p>
           </section>
 
-          {/* 7 — Scenario calculator */}
+          {/* 8 — Scenario calculator */}
           <section>
             <h3 className="text-xs font-bold text-text-muted uppercase tracking-wide mb-2">
               What-If Scenario Calculator

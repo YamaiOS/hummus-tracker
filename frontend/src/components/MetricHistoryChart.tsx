@@ -9,6 +9,7 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
+  ReferenceArea,
 } from 'recharts'
 import { fetchHistorySeries } from '../api/client'
 import { useFilters } from '../context/FilterContext'
@@ -126,6 +127,11 @@ export default function MetricHistoryChart() {
                   ({ risk_score: 'RISK SCORE', brent: 'BRENT' } as Record<string, string>)[v] ?? v.toUpperCase()
                 }
               />
+              {/* Regime bands — risk axis only, 4 zones */}
+              <ReferenceArea yAxisId="risk" y1={0}  y2={25}  fill="#2dd4bf" fillOpacity={0.07} ifOverflow="hidden" />
+              <ReferenceArea yAxisId="risk" y1={25} y2={50}  fill="#c4a35a" fillOpacity={0.07} ifOverflow="hidden" />
+              <ReferenceArea yAxisId="risk" y1={50} y2={75}  fill="#f97316" fillOpacity={0.07} ifOverflow="hidden" />
+              <ReferenceArea yAxisId="risk" y1={75} y2={100} fill="#ef4444" fillOpacity={0.08} ifOverflow="hidden" />
               <Line
                 yAxisId="risk"
                 type="monotone"

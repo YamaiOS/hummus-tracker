@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import {
-  ResponsiveContainer, AreaChart, Area, Tooltip, ReferenceLine, YAxis,
+  ResponsiveContainer, AreaChart, Area, Tooltip, ReferenceLine, ReferenceArea, YAxis,
 } from 'recharts'
 import { fetchGPR } from '../api/client'
 
@@ -94,6 +94,8 @@ export default function GPRPanel() {
                 labelFormatter={(m: string) => m}
                 formatter={(v: number) => [`${v.toFixed(0)}`, 'GPR']}
               />
+              {/* Faint gold shading above baseline = elevated geopolitical risk zone */}
+              <ReferenceArea y1={baseline} y2={350} fill="#c4a35a" fillOpacity={0.07} ifOverflow="hidden" />
               <ReferenceLine
                 y={baseline}
                 stroke="#566b8a"
