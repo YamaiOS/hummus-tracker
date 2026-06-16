@@ -77,3 +77,9 @@ refresh (GitHub scheduled cron is best-effort/bursty — 00:26 run fired; 01:00/
 delayed by GH). App hardened + healthy. Holding for the 6h final summary.
 ## Checkpoint 2026-06-16T03:27:26.155821+00:00 (4.6h) — all green: 39 endpoints 200, 0 errors, no overlaps; refreshed.
 ## Checkpoint 2026-06-16T04:30:50.066001+00:00 (5.7h) — all green; finalizing at 6h.
+
+## ✅ MARATHON COMPLETE (6.27h, ended 2026-06-16T05:04 UTC)
+12 waves + hardening. 39 endpoints, 13 new free-data feeds, Risk Index v2 (8 comp/7 LIVE).
+Final QA: 0 console/page/net errors, no panel overlaps, 17 pytest passed, mobile clean,
+bundle healthy. Still $0 scale-to-zero. Live: https://oil.yieldwise.my.
+Deferred: GIE EU gas storage (needs key), MARAD/UKMTO (WAF-403), real Gulf AIS (paid → vessels SIM).
