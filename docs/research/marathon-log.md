@@ -70,3 +70,8 @@ geometric — masked crisis). Live score 72/high. Backward-compatible output.
 - W12: bundle healthy (no 500KB warning; vendors+tabs lazy-split, main 70KB);
   mobile 390px: 0 errors, no h-overflow, fully usable. All QA clean.
 - ~2.5h elapsed. Feature backlog exhausted (free data); core + hardening complete.
+
+## Checkpoint 2026-06-16T02:23:42.137601+00:00 (3.5h elapsed) — verify pass
+All 39 endpoints 200, 0 console/page/net errors, no panel overlaps. Triggered a
+refresh (GitHub scheduled cron is best-effort/bursty — 00:26 run fired; 01:00/02:00
+delayed by GH). App hardened + healthy. Holding for the 6h final summary.
