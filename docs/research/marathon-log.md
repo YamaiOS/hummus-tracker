@@ -62,3 +62,11 @@ geometric — masked crisis). Live score 72/high. Backward-compatible output.
   real AIS=paid). PIVOTING remaining marathon time to HARDENING (higher value than padding):
 ## Wave 11+: persistent alerts for new signals (OVX/GPR/incident/chokepoint), backend
 ## pytest smoke tests for the 13 new services, bundle/perf check. Then final QA + summary.
+
+## Waves 11-12 (DONE, deployed 2026-06-16T01:13:31.032255+00:00) — hardening
+- W11: +4 persistent alerts (OVX high / GPR severe / critical incident 24h / Hormuz
+  chokepoint <60%) in snapshot _evaluate_alerts; tests/test_services.py (14 smoke
+  tests, all green); pytest.ini excludes manual scripts → full suite 17 passed.
+- W12: bundle healthy (no 500KB warning; vendors+tabs lazy-split, main 70KB);
+  mobile 390px: 0 errors, no h-overflow, fully usable. All QA clean.
+- ~2.5h elapsed. Feature backlog exhausted (free data); core + hardening complete.
