@@ -45,3 +45,12 @@ geometric — masked crisis). Live score 72/high. Backward-compatible output.
 - FULL QA: all endpoints 200, 0 errors, no overlaps, interactions pass.
 ### Next: W9 MARAD/UKMTO official incident feed (higher-credibility than Google News)
 ### + risk-index decomposition view; W10 historical regime annotation / EU gas storage (GIE).
+
+## Wave 9 (DONE, deployed 2026-06-16T00:27:39.969442+00:00)
+- Maritime incident timeline (/api/incidents — Google News kinetic incidents,
+  classified type+severity; MARAD/UKMTO are WAF-403/PDF so deferred) + panel.
+- Risk Index decomposition panel (component contribution = score×weight).
+- 39 endpoints. Visual review of all 3 tabs: coherent, no overlaps, tier-badged.
+- GIE EU gas storage: confirmed needs registered key → DEFERRED.
+## Wave 10: methodology modal refresh (incidents/production/integrity/GPR-in-index/
+## decomposition/scenario) + chart regime bands. Then final QA + summary near 6h.
