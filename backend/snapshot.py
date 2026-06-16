@@ -290,6 +290,129 @@ async def _evaluate_alerts() -> None:
     except Exception as exc:  # noqa: BLE001
         logger.warning("Alert check failed (sts_events): %s", exc)
 
+    # ── 5. Oil volatility (OVX) high ─────────────────────────────────────────
+    try:
+        vol_path = SNAPSHOT_DIR / "volatility.json"
+        if vol_path.exists():
+            vol_data: dict = json.loads(vol_path.read_text())
+            regime = vol_data.get("regime")
+            ovx = vol_data.get("ovx")
+            zscore = vol_data.get("zscore")
+            is_high = regime == "high" or (zscore is not None and zscore >= 1.5)
+            if is_high:
+                uid = f"{today}:ovx_high"
+                msg = (
+                    f"Crude implied volatility elevated — OVX {ovx} "
+                    f"(regime high, z={zscore})"
+                )
+                await send_alert("oil_volatility", msg, unique_id=uid, severity="warning")
+                log_activity("oil_volatility", msg, severity="warning",
+                             metadata={"ovx": ovx, "zscore": zscore, "regime": regime})
+                logger.warning("ALERT [oil_volatility] %s", msg)
+            else:
+                logger.info("Alert check ok (oil_volatility): regime=%s z=%s", regime, zscore)
+        else:
+            logger.info("volatility.json not found — skipping OVX check")
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Alert check failed (oil_volatility): %s", exc)
+
+    # ── 6. Geopolitical risk (GPR) severe ────────────────────────────────────
+    try:
+        gpr_path = SNAPSHOT_DIR / "gpr.json"
+        if gpr_path.exists():
+            gpr_data: dict = json.loads(gpr_path.read_text())
+            gpr_regime = gpr_data.get("regime")
+            gpr_value = gpr_data.get("normalized_0_100")
+            is_severe = gpr_regime == "severe" or (gpr_value is not None and gpr_value >= 75)
+            if is_severe:
+                uid = f"{today}:gpr_severe"
+                msg = (
+                    f"Geopolitical risk index severe — GPR {gpr_value} "
+                    f"(regime: {gpr_regime})"
+                )
+                await send_alert("gpr_severe", msg, unique_id=uid, severity="critical")
+                log_activity("gpr_severe", msg, severity="critical",
+                             metadata={"normalized_0_100": gpr_value, "regime": gpr_regime})
+                logger.warning("ALERT [gpr_severe] %s", msg)
+            else:
+                logger.info("Alert check ok (gpr): regime=%s value=%s", gpr_regime, gpr_value)
+        else:
+            logger.info("gpr.json not found — skipping GPR check")
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Alert check failed (gpr_severe): %s", exc)
+
+    # ── 7. Critical maritime incident (last 24h) ──────────────────────────────
+    try:
+        inc_path = SNAPSHOT_DIR / "incidents.json"
+        if inc_path.exists():
+            inc_data = json.loads(inc_path.read_text())
+            # incidents may be top-level list or wrapped in a key
+            if isinstance(inc_data, dict):
+                incidents: list[dict] = inc_data.get("incidents") or inc_data.get("items") or []
+            else:
+                incidents = inc_data if isinstance(inc_data, list) else []
+            critical_recent = [
+                i for i in incidents
+                if i.get("severity") == "critical"
+                and i.get("age_hours") is not None
+                and i.get("age_hours") <= 24
+            ]
+            if critical_recent:
+                # most recent = smallest age_hours
+                most_recent = min(critical_recent, key=lambda i: i.get("age_hours", 9999))
+                count = len(critical_recent)
+                title = most_recent.get("title") or most_recent.get("description") or "unknown"
+                uid = f"{today}:incident_critical"
+                msg = (
+                    f"{count} critical maritime incident(s) in last 24h — "
+                    f"most recent: {title}"
+                )
+                await send_alert("incident_critical", msg, unique_id=uid, severity="critical")
+                log_activity("incident_critical", msg, severity="critical",
+                             metadata={"count": count, "most_recent_title": title})
+                logger.warning("ALERT [incident_critical] %s", msg)
+            else:
+                logger.info("Alert check ok (incident_critical): no critical incidents in last 24h")
+        else:
+            logger.info("incidents.json not found — skipping incident check")
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Alert check failed (incident_critical): %s", exc)
+
+    # ── 8. Hormuz chokepoint depressed ───────────────────────────────────────
+    try:
+        chk_path = SNAPSHOT_DIR / "chokepoints.json"
+        if chk_path.exists():
+            chk_data = json.loads(chk_path.read_text())
+            if isinstance(chk_data, dict):
+                chokepoints: list[dict] = chk_data.get("chokepoints") or chk_data.get("items") or []
+            else:
+                chokepoints = chk_data if isinstance(chk_data, list) else []
+            hormuz = next(
+                (c for c in chokepoints if "Hormuz" in (c.get("name") or "")),
+                None,
+            )
+            if hormuz is not None:
+                pct = hormuz.get("pct_of_baseline")
+                if pct is not None and pct < 60:
+                    sev = "critical" if pct < 40 else "warning"
+                    uid = f"{today}:hormuz_flow:{sev}"
+                    msg = (
+                        f"Hormuz transits at {pct:.1f}% of 30-day baseline — "
+                        f"supply disruption"
+                    )
+                    await send_alert("hormuz_flow", msg, unique_id=uid, severity=sev)
+                    log_activity("hormuz_flow", msg, severity=sev,
+                                 metadata={"pct_of_baseline": pct})
+                    logger.warning("ALERT [hormuz_flow/%s] %s", sev, msg)
+                else:
+                    logger.info("Alert check ok (hormuz_flow): pct=%s", pct)
+            else:
+                logger.info("Alert check ok (hormuz_flow): Hormuz chokepoint not found in data")
+        else:
+            logger.info("chokepoints.json not found — skipping Hormuz check")
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Alert check failed (hormuz_flow): %s", exc)
+
     logger.info("Alert threshold evaluation complete.")
 
 
