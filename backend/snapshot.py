@@ -81,7 +81,34 @@ ENDPOINTS: list[str] = [
     "/api/production",
     "/api/integrity",
     "/api/incidents",
+    "/api/backtest",
 ]
+
+
+def _atomic_write_json(path: Path, payload) -> None:
+    """Serialize ``payload`` to JSON and write it to ``path`` atomically.
+
+    Writes to a temp file in the same directory, fsyncs, then os.replace()s into
+    place (atomic on POSIX). A reader never sees a truncated/half-written file,
+    and a crash mid-write leaves the previous good file intact.
+    """
+    import tempfile
+
+    text = json.dumps(payload)  # raises if payload is not JSON-serialisable
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=str(path.parent), prefix=f".{path.name}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w") as f:
+            f.write(text)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, path)
+    except Exception:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
 
 
 def slug_for(path: str) -> str:
@@ -170,7 +197,16 @@ async def _dump_endpoints() -> int:
             except Exception as e:  # noqa: BLE001
                 logger.warning("endpoint failed: %s — %s (keeping previous snapshot)", path, e)
                 continue
-            (SNAPSHOT_DIR / f"{slug}.json").write_text(json.dumps(payload))
+            # Skip empty payloads (None / empty dict / empty list) so a momentary
+            # blank response never clobbers a good previous snapshot.
+            if payload is None or (isinstance(payload, (dict, list, str)) and len(payload) == 0):
+                logger.warning("endpoint returned empty payload: %s (keeping previous snapshot)", path)
+                continue
+            try:
+                _atomic_write_json(SNAPSHOT_DIR / f"{slug}.json", payload)
+            except Exception as e:  # noqa: BLE001
+                logger.warning("snapshot write failed: %s — %s (keeping previous snapshot)", path, e)
+                continue
             written += 1
     return written
 
@@ -434,11 +470,11 @@ async def run() -> None:
     await _evaluate_alerts()
 
     SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
-    (SNAPSHOT_DIR / "_meta.json").write_text(json.dumps({
+    _atomic_write_json(SNAPSHOT_DIR / "_meta.json", {
         "generated_at": started.isoformat(),
         "endpoints_written": written,
         "ais_sample_seconds": AIS_SAMPLE_SECONDS,
-    }))
+    })
     logger.info("=== Snapshot complete: %s/%s endpoints written ===", written, len(ENDPOINTS))
 
 

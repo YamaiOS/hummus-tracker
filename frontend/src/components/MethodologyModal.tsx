@@ -313,15 +313,36 @@ export default function MethodologyModal({ open, onClose }: MethodologyModalProp
             </p>
           </section>
 
-          {/* Disclaimer */}
-          <section className="bg-petro-bg border border-petro-border rounded-lg px-4 py-4">
-            <p className="text-[11px] text-text-faint leading-relaxed">
-              <span className="text-text-muted font-bold uppercase">Disclaimer — </span>
-              Hummus Tracker is an analytical and educational research tool.
-              Nothing on this dashboard constitutes trading advice, investment advice, or operational guidance for maritime navigation.
-              Simulated vessel data does not reflect actual real-world positions.
-              Users relying on this data for any commercial, financial, or safety-critical purpose do so at their own risk.
-            </p>
+          {/* Disclaimer & Terms */}
+          <section className="bg-petro-bg border border-petro-gold/30 rounded-lg px-4 py-4">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle size={14} className="text-petro-gold shrink-0" />
+              <h3 className="text-xs font-bold text-petro-gold uppercase tracking-widest">
+                Disclaimer &amp; Terms
+              </h3>
+            </div>
+            <ul className="space-y-2 text-[11px] text-text-faint leading-relaxed list-none">
+              <li>
+                <span className="text-text-warm font-semibold">Informational &amp; educational use only.</span>{' '}
+                Hummus Tracker is <span className="text-text-muted font-semibold">not</span> financial, trading, investment, operational, navigational, or security advice, and must not be used as the basis for any such decision.
+              </li>
+              <li>
+                <span className="text-text-warm font-semibold">Not a validated model.</span>{' '}
+                The Hormuz Risk Index is a transparent composite of public indicators with subjective, <span className="text-text-muted font-semibold">unfitted</span> weights (operator priors). It is <span className="text-text-muted font-semibold">not</span> a back-tested or predictive model — do not rely on it for decisions.
+              </li>
+              <li>
+                <span className="text-text-warm font-semibold">Third-party &amp; simulated data.</span>{' '}
+                Data is aggregated from public third-party sources (FRED, EIA, IMF PortWatch, USGS, Open-Meteo, Google News, Caldara-Iacoviello GPR) and may be delayed, incomplete, or incorrect. Vessel/AIS positions and some panels are <span className="text-text-muted font-semibold">simulated or seeded</span> (clearly badged) and must not be treated as real feeds.
+              </li>
+              <li>
+                <span className="text-text-warm font-semibold">Provided "AS IS".</span>{' '}
+                No warranty of any kind, express or implied. The author accepts no liability for any loss or decision made using this tool. You use it entirely at your own risk.
+              </li>
+              <li>
+                <span className="text-text-warm font-semibold">Attribution.</span>{' '}
+                The GPR Index (Caldara &amp; Iacoviello) and IMF PortWatch are used under their respective public / Creative Commons terms.
+              </li>
+            </ul>
           </section>
 
         </div>

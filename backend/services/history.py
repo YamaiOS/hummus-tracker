@@ -2,12 +2,33 @@
 from __future__ import annotations
 
 import logging
+import math
 from datetime import datetime, timezone
 from typing import Optional
 
 logger = logging.getLogger(__name__)
 
 _MAX_SERIES_ROWS = 365  # cap returned rows at one year
+
+
+def _valid_num(v, lo: float, hi: float) -> Optional[float]:
+    """Coerce ``v`` to a finite float within [lo, hi], else None.
+
+    Defensive and dependency-free: rejects None, non-numeric strings, NaN/inf,
+    and out-of-range values (the latter are treated as implausible → nulled so
+    they never poison the accumulating series).
+    """
+    if v is None:
+        return None
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return None
+    if not math.isfinite(f):
+        return None
+    if f < lo or f > hi:
+        return None
+    return f
 
 
 async def record_metric_snapshot() -> None:
@@ -130,27 +151,49 @@ async def record_metric_snapshot() -> None:
     except Exception as exc:
         logger.warning("history: shamal_max_wind failed: %s", exc)
 
+    # Validate / clamp each field — coerce to finite float, null implausible
+    # values, so a single bad feed never poisons the durable series.
+    v_strait_flow = _valid_num(strait_flow_mbpd, 0, 60)
+    v_brent = _valid_num(brent, 0, 500)
+    v_wti = _valid_num(wti, 0, 500)
+    v_risk = _valid_num(risk_score, 0, 100)
+    v_shamal = _valid_num(shamal_max_wind, 0, 200)
+
+    _vt = _valid_num(transit_count, 0, 1_000_000)
+    v_transit = int(_vt) if _vt is not None else None
+    _vd = _valid_num(dark_count, 0, 1_000_000)
+    v_dark = int(_vd) if _vd is not None else None
+    _vs = _valid_num(sts_count, 0, 1_000_000)
+    v_sts = int(_vs) if _vs is not None else None
+
+    # If every meaningful field is null the row would be pure garbage — skip it.
+    if all(x is None for x in (
+        v_strait_flow, v_brent, v_wti, v_transit, v_dark, v_sts, v_risk, v_shamal,
+    )):
+        logger.warning("history: all fields null/invalid — skipping MetricHistory insert")
+        return
+
     # Insert row
     try:
         with SessionLocal() as db:
             row = MetricHistory(
                 ts=ts,
-                strait_flow_mbpd=strait_flow_mbpd,
-                brent=brent,
-                wti=wti,
-                transit_count=transit_count,
-                dark_count=dark_count,
-                sts_count=sts_count,
-                risk_score=risk_score,
-                shamal_max_wind=shamal_max_wind,
+                strait_flow_mbpd=v_strait_flow,
+                brent=v_brent,
+                wti=v_wti,
+                transit_count=v_transit,
+                dark_count=v_dark,
+                sts_count=v_sts,
+                risk_score=int(v_risk) if v_risk is not None else None,
+                shamal_max_wind=v_shamal,
             )
             db.add(row)
             db.commit()
         logger.info(
             "MetricHistory row inserted: risk=%s brent=%s flow=%s",
-            risk_score,
-            brent,
-            strait_flow_mbpd,
+            v_risk,
+            v_brent,
+            v_strait_flow,
         )
     except Exception as exc:
         logger.error("history: failed to insert row: %s", exc)

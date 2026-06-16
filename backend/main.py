@@ -219,6 +219,13 @@ async def gpr():
     return await get_gpr()
 
 
+@app.get("/api/backtest")
+async def backtest():
+    """Risk-index event-study backtest — proxy index vs historical Gulf crises."""
+    from .services.backtest import get_index_backtest
+    return await get_index_backtest()
+
+
 @app.get("/api/production")
 async def production():
     """OPEC & Gulf crude+liquids production by producer (EIA International)."""

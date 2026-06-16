@@ -570,3 +570,33 @@ export interface Incidents {
 }
 
 export const fetchIncidents = () => api.get<Incidents>('/incidents').then(r => r.data)
+
+// ── Risk Index Backtest (event study) ─────────────────────────────────────────
+
+export interface BacktestPoint {
+  month: string
+  proxy_index: number
+  gpr_norm: number | null
+  ovx_norm: number | null
+  brent: number | null
+}
+
+export interface BacktestEvent {
+  date: string
+  name: string
+  proxy_index: number | null
+  flagged_level: string
+  note: string
+}
+
+export interface Backtest {
+  series: BacktestPoint[]
+  events: BacktestEvent[]
+  weights: { gpr: number; ovx: number }
+  methodology: string
+  disclaimer: string
+  source: string
+  updated_at: string
+}
+
+export const fetchBacktest = () => api.get<Backtest>('/backtest').then(r => r.data)

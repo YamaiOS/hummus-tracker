@@ -12,6 +12,7 @@ import BypassGauge from '../../components/BypassGauge'
 import ScenarioCalculator from '../../components/ScenarioCalculator'
 import GPRPanel from '../../components/GPRPanel'
 import RiskDecomposition from '../../components/RiskDecomposition'
+import BacktestPanel from '../../components/BacktestPanel'
 
 export default function AnalyticsTab() {
   return (
@@ -82,6 +83,15 @@ export default function AnalyticsTab() {
         tier="LIVE"
       >
         <RiskDecomposition />
+      </Panel>
+
+      {/* Backtest — transparent event study proxying the index against real crises */}
+      <Panel
+        title="Risk Index Backtest — Event Study"
+        subtitle="Proxy index vs historical Gulf crises (illustrative, not validated)"
+        tier="EST"
+      >
+        <BacktestPanel />
       </Panel>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">

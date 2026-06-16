@@ -212,6 +212,15 @@ export default function Dashboard() {
           <p className="text-[11px] text-text-faint mt-1">
             Data: aisstream.io | IMF PortWatch | EIA | FRED | Open-Meteo
           </p>
+          <p className="text-[11px] text-text-faint mt-3 max-w-2xl mx-auto leading-relaxed">
+            Informational only — not financial, operational, or navigational advice. No warranty. Some data simulated/seeded (badged).{' '}
+            <button
+              onClick={() => setMethodologyOpen(true)}
+              className="text-text-muted hover:text-petro-teal underline underline-offset-2 transition-colors"
+            >
+              Methodology &amp; Terms
+            </button>
+          </p>
         </footer>
       </main>
       <MethodologyModal open={methodologyOpen} onClose={() => setMethodologyOpen(false)} />

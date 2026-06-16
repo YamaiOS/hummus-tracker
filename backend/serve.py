@@ -22,7 +22,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, Header
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from .snapshot import SNAPSHOT_DIR, slug_for
@@ -105,6 +105,21 @@ async def refresh(x_refresh_token: str = Header(default="")):
         logger.info("Refresh triggered via /api/internal/refresh")
         result = await _run_snapshot()
     return JSONResponse(result, status_code=200 if result.get("ok") else 500)
+
+
+@app.get("/feed.xml")
+def rss_feed():
+    """Syndicated RSS feed (risk level, daily brief, recent incidents) — distribution."""
+    from .services.syndication import build_rss
+    return Response(build_rss(SNAPSHOT_DIR), media_type="application/rss+xml")
+
+
+@app.get("/card.svg")
+def risk_card():
+    """Shareable social card rendering the current Hormuz Risk Index (dynamic SVG)."""
+    from .services.syndication import build_risk_card_svg
+    return Response(build_risk_card_svg(SNAPSHOT_DIR), media_type="image/svg+xml",
+                    headers={"Cache-Control": "public, max-age=900"})
 
 
 @app.get("/api/{path:path}")
