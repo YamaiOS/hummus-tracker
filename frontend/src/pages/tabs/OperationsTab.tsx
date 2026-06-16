@@ -1,4 +1,5 @@
 import Panel from '../../components/Panel'
+import TransitMonitor from '../../components/TransitMonitor'
 import VesselMap from '../../components/VesselMap'
 import ActivityFeed from '../../components/ActivityFeed'
 import WeatherAlertsPanel from '../../components/WeatherAlertsPanel'
@@ -22,12 +23,11 @@ export default function OperationsTab({ darkVesselCount }: OperationsTabProps) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
         <div className="lg:col-span-2">
           <Panel
-            title="Live Vessel Map"
-            subtitle="Real-time AIS positions & maritime lanes"
-            footer="SOURCE: AISSTREAM.IO"
-            tier="SIM"
+            title="Strait Transit Monitor"
+            subtitle="Real satellite-AIS transit counts vs baseline"
+            tier="LIVE"
           >
-            <VesselMap />
+            <TransitMonitor />
           </Panel>
         </div>
         <div className="space-y-4">
@@ -42,6 +42,15 @@ export default function OperationsTab({ darkVesselCount }: OperationsTabProps) {
           </Panel>
         </div>
       </div>
+
+      <Panel
+        title="Vessel Map (Simulated Demo)"
+        subtitle="Illustrative positions — AIS feed unavailable; not a live vessel feed"
+        footer="SOURCE: AISSTREAM.IO"
+        tier="SIM"
+      >
+        <VesselMap />
+      </Panel>
 
       <Panel title="Strait Intelligence Wire" subtitle="Live Hormuz & Gulf shipping headlines" tier="LIVE">
         <NewsWire />

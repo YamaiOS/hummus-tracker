@@ -469,6 +469,14 @@ async def run() -> None:
     written = await _dump_endpoints()
     await _evaluate_alerts()
 
+    # Once-per-day distribution digest (no-ops if Telegram unconfigured).
+    # Local import avoids any import-cycle risk; wrapped so it never breaks the run.
+    try:
+        from .services.alerts import send_daily_digest
+        await send_daily_digest(SNAPSHOT_DIR)
+    except Exception as _e:  # noqa: BLE001
+        logger.warning("daily digest step failed: %s", _e)
+
     SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
     _atomic_write_json(SNAPSHOT_DIR / "_meta.json", {
         "generated_at": started.isoformat(),
