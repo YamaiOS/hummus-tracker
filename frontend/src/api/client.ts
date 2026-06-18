@@ -582,6 +582,38 @@ export interface Incidents {
 
 export const fetchIncidents = () => api.get<Incidents>('/incidents').then(r => r.data)
 
+// ── Historical Lead-Lag (monthly GPR/OVX proxy vs Brent returns) ──────────────
+
+export interface LeadLagEntry {
+  lag_months: number
+  r: number | null
+  n: number
+  significant: boolean
+}
+
+export interface LeadLagPeak {
+  lag_months: number
+  r: number | null
+  significant: boolean
+}
+
+export interface LeadLag {
+  lags: LeadLagEntry[]
+  peak: LeadLagPeak | null
+  contemporaneous_level_r: number | null
+  n: number
+  span: { start: string; end: string } | null
+  ci95: number | null
+  interpretation: string
+  methodology: string
+  disclaimer: string
+  source: string
+  updated_at: string
+  insufficient?: boolean
+}
+
+export const fetchLeadlag = () => api.get<LeadLag>('/leadlag').then(r => r.data)
+
 // ── Risk Index Backtest (event study) ─────────────────────────────────────────
 
 export interface BacktestPoint {

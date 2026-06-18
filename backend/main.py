@@ -226,6 +226,13 @@ async def backtest():
     return await get_index_backtest()
 
 
+@app.get("/api/leadlag")
+async def leadlag():
+    """Historical lead-lag — monthly GPR/OVX proxy cross-correlated with Brent returns."""
+    from .services.leadlag import get_leadlag
+    return await get_leadlag()
+
+
 @app.get("/api/production")
 async def production():
     """OPEC & Gulf crude+liquids production by producer (EIA International)."""

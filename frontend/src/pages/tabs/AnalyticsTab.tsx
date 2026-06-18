@@ -14,6 +14,7 @@ import GPRPanel from '../../components/GPRPanel'
 import RiskDecomposition from '../../components/RiskDecomposition'
 import BacktestPanel from '../../components/BacktestPanel'
 import LeadLagPanel from '../../components/LeadLagPanel'
+import HistoricalLeadLag from '../../components/HistoricalLeadLag'
 
 export default function AnalyticsTab() {
   return (
@@ -102,6 +103,15 @@ export default function AnalyticsTab() {
         tier="LIVE"
       >
         <LeadLagPanel />
+      </Panel>
+
+      {/* Historical lead-lag — rigorous multi-year monthly analysis */}
+      <Panel
+        title="Historical Lead-Lag — Risk vs Brent"
+        subtitle="Monthly GPR/OVX proxy vs Brent returns (2016→now) — significance-tested"
+        tier="EST"
+      >
+        <HistoricalLeadLag />
       </Panel>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
