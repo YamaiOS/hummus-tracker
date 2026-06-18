@@ -107,3 +107,7 @@ RSS /feed.xml + /card.svg; atomic writes + history validation; disclaimer/ToS; /
 
 ## Session 2026-06-18T11:23:29.009393+00:00 — Risk Index component freshness (credibility #6)
 - Each component now carries as_of/age_hours/stale (cadence-aware: GPR>45d, daily>60h, real-time never) + top-level freshness summary; RiskDecomposition shows "as of X ago" + STALE chips. Additive, score unchanged. Live: stale=[Strait Flow, GPR, Seismic]. 17 tests pass, 0 QA errors.
+
+## Session 2026-06-18T12:10:49.607304+00:00 — Historical lead-lag (dedicated Sonnet agent)
+- /api/leadlag + HistoricalLeadLag panel: GPR/OVX proxy vs Brent monthly returns, n=125 (2016-02→2026-06), lags -6..+6mo with 95% CI significance.
+- FINDING (honest null): NO significant lead-lag; peak r=-0.146 @ +6mo inside ±0.180 CI; contemporaneous level r=+0.259 (co-trending, not predictive). Displayed transparently. 41 endpoints, 17 tests, 0 QA errors.
