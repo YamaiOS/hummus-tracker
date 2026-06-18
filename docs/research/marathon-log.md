@@ -98,3 +98,9 @@ RSS /feed.xml + /card.svg; atomic writes + history validation; disclaimer/ToS; /
   /api/internal/refresh hourly — verified end-to-end (auth ok, snapshot advanced).
   GitHub Actions cron retained as backup; refresh lock prevents double-runs.
 - QA: 0 errors, no real overlaps, 17 tests pass.
+
+## Session 2026-06-18T10:54:06.161694+00:00 — lead-lag + distribution polish
+- Risk↔Brent relationship panel (preliminary lead-lag, n<24 gated, honestly caveated) — Analytics.
+- RSS autodiscovery <link> in head (feed readers/browsers find /feed.xml). /card.svg + /feed.xml live (200).
+- State: 39 endpoints, hourly Fly cron keeping data fresh (snap current), QA 0 errors, 17 tests. Self-maintaining.
+- Open: Telegram secrets (user), lead-lag matures w/ ~3-4wk history, real AIS (paid).
