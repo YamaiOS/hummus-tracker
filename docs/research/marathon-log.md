@@ -104,3 +104,6 @@ RSS /feed.xml + /card.svg; atomic writes + history validation; disclaimer/ToS; /
 - RSS autodiscovery <link> in head (feed readers/browsers find /feed.xml). /card.svg + /feed.xml live (200).
 - State: 39 endpoints, hourly Fly cron keeping data fresh (snap current), QA 0 errors, 17 tests. Self-maintaining.
 - Open: Telegram secrets (user), lead-lag matures w/ ~3-4wk history, real AIS (paid).
+
+## Session 2026-06-18T11:23:29.009393+00:00 — Risk Index component freshness (credibility #6)
+- Each component now carries as_of/age_hours/stale (cadence-aware: GPR>45d, daily>60h, real-time never) + top-level freshness summary; RiskDecomposition shows "as of X ago" + STALE chips. Additive, score unchanged. Live: stale=[Strait Flow, GPR, Seismic]. 17 tests pass, 0 QA errors.
