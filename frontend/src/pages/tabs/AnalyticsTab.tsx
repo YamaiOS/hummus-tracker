@@ -13,6 +13,7 @@ import ScenarioCalculator from '../../components/ScenarioCalculator'
 import GPRPanel from '../../components/GPRPanel'
 import RiskDecomposition from '../../components/RiskDecomposition'
 import BacktestPanel from '../../components/BacktestPanel'
+import LeadLagPanel from '../../components/LeadLagPanel'
 
 export default function AnalyticsTab() {
   return (
@@ -92,6 +93,15 @@ export default function AnalyticsTab() {
         tier="EST"
       >
         <BacktestPanel />
+      </Panel>
+
+      {/* Risk ↔ Brent relationship — preliminary client-side lead-lag */}
+      <Panel
+        title="Risk ↔ Brent Relationship"
+        subtitle="Preliminary lead-lag — strengthens as history accumulates"
+        tier="LIVE"
+      >
+        <LeadLagPanel />
       </Panel>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
