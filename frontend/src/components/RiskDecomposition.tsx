@@ -16,6 +16,15 @@ function scoreColor(score: number): string {
   return '#00a19c'
 }
 
+// Compact relative-age label ("now", "2h ago", "31d ago") from hours.
+// Returns null when the age is unknown so callers can render nothing.
+function relativeAge(hours: number | null | undefined): string | null {
+  if (hours == null || !Number.isFinite(hours)) return null
+  if (hours < 1) return 'just now'
+  if (hours < 48) return `${Math.round(hours)}h ago`
+  return `${Math.round(hours / 24)}d ago`
+}
+
 export default function RiskDecomposition() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['riskIndex'],
@@ -63,6 +72,15 @@ export default function RiskDecomposition() {
 
   const maxContrib = ranked[0]?.contribution || 1
 
+  // Stale components for the top-level caption. Prefer the server's summary;
+  // fall back to per-component flags. Defensive: older payloads may lack both.
+  const freshness = (data as any).freshness as { stale_components?: string[] } | undefined
+  const staleNames: string[] =
+    (Array.isArray(freshness?.stale_components) && freshness!.stale_components!.length > 0
+      ? freshness!.stale_components!
+      : components.filter(c => (c as any).stale === true).map(c => c.name)
+    ).filter(Boolean)
+
   return (
     <div className="space-y-4">
       <div className="space-y-3">
@@ -72,6 +90,8 @@ export default function RiskDecomposition() {
           const color = scoreColor(c.score_0_100)
           const rawTier = (c.tier ?? '').toUpperCase()
           const tierCfg = TIER_COLOR[rawTier] ?? null
+          const ageLabel = relativeAge((c as any).age_hours)
+          const isStale = (c as any).stale === true
 
           return (
             <div key={i} className="space-y-1.5">
@@ -81,6 +101,11 @@ export default function RiskDecomposition() {
                   {tierCfg && (
                     <span className={`flex-shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${tierCfg.bg} ${tierCfg.text}`}>
                       {tierCfg.label}
+                    </span>
+                  )}
+                  {isStale && (
+                    <span className="flex-shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-petro-gold/15 text-petro-gold">
+                      Stale
                     </span>
                   )}
                 </div>
@@ -98,13 +123,23 @@ export default function RiskDecomposition() {
                 />
               </div>
 
-              {c.detail && (
-                <p className="text-[10px] text-text-faint leading-snug">{c.detail}</p>
+              {(c.detail || ageLabel) && (
+                <p className="text-[10px] text-text-faint leading-snug">
+                  {c.detail}
+                  {c.detail && ageLabel && <span className="text-text-muted"> · </span>}
+                  {ageLabel && <span className="text-text-muted">as of {ageLabel}</span>}
+                </p>
               )}
             </div>
           )
         })}
       </div>
+
+      {staleNames.length > 0 && (
+        <p className="text-[10px] text-petro-gold/80 leading-snug">
+          ⚠ {staleNames.length} component{staleNames.length === 1 ? '' : 's'} leaning on older data: {staleNames.join(', ')}
+        </p>
+      )}
 
       <p className="text-[10px] text-text-faint border-t border-petro-border pt-2 leading-relaxed">
         Contribution = score × weight. Share% = component contribution ÷ total weighted contribution × 100. Sorted by contribution descending.

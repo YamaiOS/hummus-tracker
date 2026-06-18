@@ -379,6 +379,16 @@ export interface RiskIndexComponent {
   score_0_100: number
   weight: number
   detail: string
+  // Freshness metadata (optional — older API payloads may omit these)
+  as_of?: string | null
+  age_hours?: number | null
+  stale?: boolean
+}
+
+export interface RiskFreshness {
+  max_age_hours?: number | null
+  stale_components?: string[]
+  note?: string
 }
 
 export interface RiskIndex {
@@ -387,6 +397,7 @@ export interface RiskIndex {
   summary: string
   components: RiskIndexComponent[]
   computed_at: string
+  freshness?: RiskFreshness
 }
 
 export const fetchRiskIndex = () =>
