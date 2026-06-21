@@ -12,5 +12,5 @@ Pre-registered pass: P(tail | GPR top decile) materially > base rate, and GPR si
   [overlapping 5d] base P(tail)=0.236 | P|GPR<median=0.231 mid=0.222 top-decile=0.313 (lift=1.33x)
   [overlapping 5d] logistic tail~OVX+GPR: OVX coef=+0.013 p=0.000 | GPR coef=+0.140 p=0.000  (p inflated by overlap)
   [robust a · next-1d, no overlap] base=0.058 top-decile=0.091 (lift=1.58x) | logistic GPR coef=+0.189 p=0.000
-  [robust b · non-overlap 5d blocks n=965] base=0.240 top-decile=0.330 (lift=1.37x) | logistic GPR coef=+0.138 p=0.053
-  [robust c · block-bootstrap] observed lift=1.33x, bootstrap p(lift≥observed by chance)=0.464
+  [robust b · non-overlap 5d blocks n=965] base=0.240 top-decile=0.330 (lift=1.37x) | logistic GPR coef=+0.138 p=0.053 (OVX-controlled)
+  [robust c · ROTATION null] observed lift=1.33x, null-mean=1.00x, p(lift≥observed)=0.0124

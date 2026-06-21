@@ -29,22 +29,31 @@ with GPR. The risk signal is a redundant shadow of OVX for forecasting volatilit
 options market's known implied-vol signal, not ours.)
 
 ## H8 — Does a risk-signal spike raise P(Brent tail move |r|>2σ)?
-**VERDICT: ⚠️ NOT ROBUST → lean KILL.**
+**VERDICT: ⚠️ REAL BUT WEAK — mostly an OVX cousin; not a usable standalone edge.**
+
+> **Correction (2026-06-21, adversarial validation).** An earlier version of this
+> section claimed the lift was "indistinguishable from chance (block-bootstrap p=0.46)."
+> That was a **test bug** — the bootstrap resampled the signal and the outcome with one
+> shared index, preserving their pairing, so it tested nothing (its null centered on the
+> *observed* lift). With a **correct rotation null** (rotate GPR relative to the fixed
+> tail series — preserving each series' own autocorrelation while destroying only the
+> cross-association), the null correctly centers at 1.00× and the lift **is significant**.
+> The honest verdict below is now "real but weak / OVX-redundant", not "chance."
 
 | Test (serial-dependence handling) | Lift (top-decile vs base) | GPR significance |
 |---|---|---|
 | Overlapping 5d (naive) | 1.33× (23.6%→31.3%) | p<0.001 *(inflated by overlap)* |
-| **Next-1d, no overlap** | 1.58× (5.8%→9.1%) | **p<0.001** |
-| **Non-overlap 5d blocks (n=965)** | 1.37× | **p=0.053** (borderline) |
-| **60-day block bootstrap** | 1.33× | **p=0.46** (≈ chance) |
+| Next-1d, no overlap | 1.58× (5.8%→9.1%) | p<0.001 (GPR alone) |
+| **Rotation null (signal vs tail, autocorr-preserving)** | 1.33× (null-mean 1.00×) | **p=0.012 — significant** |
+| **Non-overlap 5d, OVX-controlled logistic** | 1.37× | **p=0.053 — borderline** |
 
-A raw association exists (GPR high → more tails), but it **largely dissolves under
-correct serial-dependence correction**: the block bootstrap — which properly accounts
-for tail *clustering* — puts the lift at p=0.46 (indistinguishable from chance), and
-the non-overlapping 5d test is only borderline (p=0.053). The effect is mostly
-**regime confounding** (GPR and tail-vol are both elevated in the same crisis weeks),
-not predictive information. Even taken at face value, a ~1.3–1.6× tail-probability
-lift is **not cheaply tradable** (straddle bid/ask + theta would eat it).
+The raw GPR→tail association is **statistically real** (rotation-null p≈0.012). BUT once
+you control for **OVX** — the options market's own implied-vol gauge — GPR's *marginal*
+contribution is only borderline (p≈0.053): OVX dominates, and the tail-lift is
+concentrated in already-high-OVX regimes. So GPR is **largely redundant with OVX** for
+tail risk, adding little incremental information. And the magnitude (~1.3–1.6× tail
+probability) is **modest and not cheaply tradable** (straddle bid/ask + theta would eat
+it). Net: a real but weak signal you wouldn't trade standalone — not a discovered edge.
 
 ## H7 — Does the dashboard detect kinetic events at/before the price reaction?
 **VERDICT: ⏳ FORWARD-ACCRUING (no historical claim made).**
@@ -61,12 +70,14 @@ reaction (daily-close proxy now; intraday if a tick source is added). Compare (1
 ---
 
 ## Bottom line
-**Phase 1 found no robust, tradable edge** — both backtestable hypotheses fail a
-rigorous bar (H1 cleanly, H8 under proper bootstrap). This is the correct,
-evidence-first outcome: the dashboard's risk signal does **not** improve oil vol
-forecasts beyond OVX, and its tail-probability "signal" is regime confounding, not
-prediction. Publishing these nulls is itself a credibility asset — it proves the
-tool tests its own claims.
+**Phase 1 found no *tradable* edge.** H1 (vol forecasting) is a clean KILL — the
+risk signal adds nothing beyond OVX. H8 (tail probability) is more subtle: the
+GPR→tail association is **statistically real** (rotation-null p≈0.012) but **largely
+redundant with OVX** (marginal contribution borderline, p≈0.053) and too modest to
+trade after costs — a real-but-weak signal, not a usable standalone edge. Either way,
+the dashboard's risk signal does **not** beat the options market (OVX) for oil risk.
+Publishing this honestly — including the corrected H8 nuance and the bug that the
+adversarial validation caught — is itself a credibility asset.
 
 **What this does NOT rule out (Phase 2/3, n-limited or data-gated):**
 - **H3** — Hormuz-event → *cross-sectional* dispersion in MY/US energy & shipping

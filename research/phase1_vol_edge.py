@@ -212,30 +212,33 @@ def main():
     Xl5 = np.column_stack([np.ones(len(d5)), d5["ovx"].to_numpy(),
                            ((d5["gprd"] - d5["gprd"].mean()) / d5["gprd"].std()).to_numpy()])
     bl5, pl5 = _logit(Xl5, d5["tail_fwd5"].to_numpy())
-    # (c) Block-bootstrap p-value for the top-decile lift (60-day contiguous blocks).
+    # (c) ROTATION NULL for the top-decile lift. The null we want: GPR carries NO
+    # information about tails, BUT each series keeps its own serial dependence
+    # (GPR autocorrelation + tail clustering). We get that by circularly rotating
+    # GPR relative to the (fixed) tail series — preserving both autocorrelations
+    # while destroying only the cross-association.
+    # NB: an earlier version resampled g & tail with ONE shared block index, which
+    # preserved their pairing → it tested nothing (null centered on the observed
+    # lift). Fixed per adversarial validation 2026-06-21.
     rng = np.random.default_rng(7)
     obs_lift = p_hi / base
-    g = d["gprd"].to_numpy(); tl = d["tail_fwd5"].to_numpy(); n = len(d); bs = 60
+    g = d["gprd"].to_numpy(); tl = d["tail_fwd5"].to_numpy(); n = len(d)
+    btl = tl.mean()
     boot = []
-    for _ in range(2000):
-        idx = []
-        while len(idx) < n:
-            s0 = rng.integers(0, n - bs)
-            idx.extend(range(s0, s0 + bs))
-        idx = np.array(idx[:n])
-        gg, tt = g[idx], tl[idx]
+    for _ in range(5000):
+        k = int(rng.integers(1, n))
+        gg = np.roll(g, k)                       # rotate signal vs fixed outcome
         thr = np.quantile(gg, 0.90)
-        b = tt.mean()
-        boot.append((tt[gg >= thr].mean() / b) if b > 0 else np.nan)
+        boot.append((tl[gg >= thr].mean() / btl) if btl > 0 else np.nan)
     boot = np.array([x for x in boot if np.isfinite(x)])
     p_boot = float((boot >= obs_lift).mean())
     rl = [
         f"  [robust a · next-1d, no overlap] base={base1:.3f} top-decile={p_hi1:.3f} "
         f"(lift={p_hi1/base1:.2f}x) | logistic GPR coef={bl1[2]:+.3f} p={pl1[2]:.3f}",
         f"  [robust b · non-overlap 5d blocks n={len(d5)}] base={base5:.3f} top-decile={p_hi5:.3f} "
-        f"(lift={p_hi5/base5:.2f}x) | logistic GPR coef={bl5[2]:+.3f} p={pl5[2]:.3f}",
-        f"  [robust c · block-bootstrap] observed lift={obs_lift:.2f}x, "
-        f"bootstrap p(lift≥observed by chance)={p_boot:.3f}",
+        f"(lift={p_hi5/base5:.2f}x) | logistic GPR coef={bl5[2]:+.3f} p={pl5[2]:.3f} (OVX-controlled)",
+        f"  [robust c · ROTATION null] observed lift={obs_lift:.2f}x, "
+        f"null-mean={boot.mean():.2f}x, p(lift≥observed)={p_boot:.4f}",
     ]
     for r in rl:
         print(r); report.append(r + "\n")

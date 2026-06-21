@@ -1,7 +1,7 @@
 import { FlaskConical, ShieldCheck, Eye, Ban } from 'lucide-react'
 
 // Verdict chip color mapping
-type Verdict = 'NULL' | 'KILL' | 'NOT ROBUST'
+type Verdict = 'NULL' | 'KILL' | 'WEAK'
 
 const VERDICT_STYLE: Record<Verdict, { bg: string; text: string; border: string }> = {
   NULL: {
@@ -14,7 +14,7 @@ const VERDICT_STYLE: Record<Verdict, { bg: string; text: string; border: string 
     text: 'text-petro-red',
     border: 'border border-petro-red/40',
   },
-  'NOT ROBUST': {
+  WEAK: {
     bg: 'bg-[#f97316]/15',
     text: 'text-[#f97316]',
     border: 'border border-[#f97316]/40',
@@ -57,8 +57,8 @@ const TESTS: {
     num: 'H8',
     label: 'Tail probability',
     detail: 'Signal → P(Brent |r|>2σ) in top-decile windows',
-    result: 'Naive 1.33× lift collapses to block-bootstrap p=0.46',
-    verdict: 'NOT ROBUST',
+    result: 'Real (rotation-null p=0.012) but mostly an OVX cousin (marginal p=0.053) — too weak to trade',
+    verdict: 'WEAK',
   },
   {
     num: 'H3',
@@ -82,12 +82,12 @@ export default function ResearchHonesty() {
       {/* Intro */}
       <div className="space-y-2">
         <p className="text-sm text-text-muted leading-relaxed">
-          We tested whether this dashboard's risk signal can{' '}
-          <span className="text-text-warm font-semibold">predict</span> oil markets. We ran four
-          independent, rigorous tests. The honest answer:{' '}
-          <span className="text-petro-gold font-semibold">it can't</span> — and that's the point.
-          Markets price geopolitical risk within hours (Brent +2.6% on event day, then fully reverts
-          within a week). This is a{' '}
+          We tested whether this dashboard's risk signal gives a{' '}
+          <span className="text-text-warm font-semibold">tradable edge</span> in oil markets. We ran
+          four independent, rigorous tests. The honest answer:{' '}
+          <span className="text-petro-gold font-semibold">no usable edge</span> — it doesn't beat the
+          options market (OVX), and that's the point. Markets price geopolitical risk within hours
+          (Brent +2.6% on event day, then fully reverts within a week). This is a{' '}
           <span className="text-petro-teal font-semibold">monitoring &amp; situational-awareness</span>{' '}
           tool, not a trading signal.
         </p>
@@ -139,9 +139,10 @@ export default function ResearchHonesty() {
         </h3>
         <p className="text-[12px] text-text-muted leading-relaxed">
           Each test used out-of-sample walk-forward evaluation, Newey-West HAC standard errors
-          (heteroskedasticity &amp; autocorrelation consistent), placebo controls, and 60-day block
-          bootstrap to handle regime clustering in tail events. Finding the null cheaply — before
-          risking capital — is the evidence-first win. Publishing it is the moat: nearly no
+          (heteroskedasticity &amp; autocorrelation consistent), placebo controls, and rotation/permutation
+          nulls for serial dependence — and an adversarial review that caught and fixed one of our own
+          test bugs before publishing. Establishing there's no tradable edge cheaply — before risking
+          capital — is the evidence-first win. Publishing it (bugs and all) is the moat: nearly no
           competing geopolitical dashboard tests its own signal, let alone discloses the result.
         </p>
       </div>

@@ -2,12 +2,13 @@
 
 **Date:** 2026-06-21 · **Repro:** `python3 research/phase2_equity_eventstudy.py`
 **Data:** daily prices via yfinance (auto-adjusted), 2018–2026.
-**Events (n=8):** curated documented Hormuz/Persian-Gulf kinetic shocks —
-Fujairah sabotage (2019-05), Gulf of Oman attacks (2019-06), Stena Impero seizure
-(2019-07), Abqaiq strike (2019-09), Soleimani (2020-01), Mercer Street (2021-07),
-Advantage Sweet seizure (2023-04), MSC Aries seizure (2024-04).
-**Baskets:** Long = tankers (FRO, STNG, DHT, INSW, TNK) + energy (XLE, XOP);
-Short = airlines (JETS, DAL, LUV, UAL). Market-model abnormal returns vs SPY.
+**Events (n=8):** documented Hormuz/Persian-Gulf kinetic shocks — Fujairah sabotage
+(2019-05), Gulf of Oman attacks (2019-06), Stena Impero seizure (2019-07), Abqaiq
+strike (2019-09), Soleimani (2020-01), Mercer Street (2021-07), Advantage Sweet seizure
+(2023-04), MSC Aries seizure (2024-04).
+**Baskets:** Long = tankers (FRO, STNG, DHT, INSW, TNK; EURN delisted/merged 2023 →
+silently dropped, long basket = 7 names) + energy (XLE, XOP); Short = airlines
+(JETS, DAL, LUV, UAL). Market-model abnormal returns vs SPY + placebo bootstrap.
 
 **Pre-registered pass:** L/S CAR > 0 over [0,+5]/[0,+10] AND placebo bootstrap p<0.05.
 
@@ -21,9 +22,8 @@ Short = airlines (JETS, DAL, LUV, UAL). Market-model abnormal returns vs SPY.
 | [0,+5] | +0.17% |
 | [0,+10] | −0.27% |
 
-Oil jumps ~2.6% on the event day/next day, then **fully reverts within a week**.
-The geopolitical premium is priced fast and fades — no persistent oil move to ride.
-This is the mechanism behind every null in this research.
+Oil jumps ~2.6% on the event day/next day, then **fully reverts within a week** — the
+premium is priced fast and fades. This is the mechanism behind the price/return nulls.
 
 ## H3 result — no significant cross-sectional edge
 | Window | mean L/S CAR | t (cross-event) | % positive | placebo mean | bootstrap p |
@@ -35,7 +35,9 @@ This is the mechanism behind every null in this research.
 
 **VERDICT: ❌ KILL.** The only flicker is a weakly-positive day-1 pop (+0.85%, 75% of
 events positive) — not significant (bootstrap p=0.38) and it **reverses** to −2.6% over
-[0,+10]. No window clears the placebo benchmark.
+[0,+10]. No window beats the placebo. *(This Phase-2 placebo bootstrap is methodologically
+sound — it resamples random non-event dates and was independently validated; unlike the
+Phase-1 H8 bug, which was corrected.)*
 
 ## Per-leg [0,+10] — the thesis doesn't even hold directionally
 | Basket | mean CAR [0,+10] | t |
@@ -45,38 +47,30 @@ events positive) — not significant (bootstrap p=0.38) and it **reverses** to �
 | Airlines (short leg) | −0.14% | −0.09 |
 
 Tankers — the supposed purest *beneficiary* — actually **underperform** post-event.
-Airlines (the supposed *victim*) are flat. The freight-spike→tanker-equity story does
-not show up at the daily horizon over these events.
-
-**Power caveat:** n=8 is small; a *small* effect can't be ruled out. But point estimates
-run *against* the thesis over the diffusion windows and the placebo bootstrap is nowhere
-near significant — no robust, tradable cross-sectional edge.
+Airlines (the supposed *victim*) are flat. The freight-spike→tanker-equity story doesn't
+show at the daily horizon. **Power caveat:** n=8 is small; a small effect can't be ruled
+out, but the point estimates run *against* the thesis and placebo is nowhere near
+significant.
 
 ---
 
 ## Cross-phase synthesis — the edge research, concluded honestly
-Four independent rigorous tests, one consistent answer:
+Four independent rigorous tests (H8 corrected after adversarial validation caught a
+bootstrap bug):
 
 | Test | Result |
 |---|---|
-| Lead-lag: index → Brent monthly returns (n=125) | NULL (peak r=−0.15, inside CI) |
-| **H1**: signal → forward realized vol, beyond OVX | KILL (OOS R² Δ negative) |
-| **H8**: signal → Brent tail probability | NOT ROBUST (block-bootstrap p=0.46) |
-| **H3**: Hormuz event → cross-sectional equity L/S | KILL (no sig; signs against thesis) |
+| Lead-lag: index → Brent monthly returns (n=125) | **NULL** (peak r=−0.15, inside CI) |
+| **H1**: signal → forward realized vol, beyond OVX | **KILL** (OOS R² Δ negative) |
+| **H8**: signal → Brent tail probability | **REAL BUT WEAK** (rotation-null p=0.012; but marginal-over-OVX p=0.053, modest, not tradable) |
+| **H3**: Hormuz event → cross-sectional equity L/S | **KILL** (no sig; signs against thesis) |
 
-**Conclusion: there is no demonstrable tradable edge** from the Hormuz risk signal in
-oil prices, oil volatility, oil tails, or the energy/shipping equity cross-section.
-Markets price geopolitical risk fast (Brent +2.6% then reverts in a week). This is the
-correct, expected, efficient-markets outcome — and finding it cheaply, before risking
-capital, is the win (weave evidence-first discipline: kill bad ideas for the price of a
-backtest).
+**Conclusion: no *tradable* edge.** The signal doesn't beat OVX for oil risk, doesn't
+predict returns, and shows no exploitable equity cross-section. The one statistically
+real effect (H8 tail association) is largely redundant with OVX and too small to trade
+after costs. Markets price geopolitical risk fast (Brent +2.6% then reverts in a week).
+Establishing this cheaply, with rigor — and catching our own test bug via adversarial
+review — is the win (weave evidence-first discipline).
 
-**Therefore the product's value is NOT alpha — it's the angles that need no return
-prediction:** real-time monitoring / detection latency (H7/N3), transparent risk
-synthesis, and risk-awareness. That is what the dashboard already does well and where
-further effort should go — not signal-mining for an oil-price edge the data says isn't
-there.
-
-**If revisited:** the only thread worth a larger-n look is the day-1 L/S pop (+0.85%,
-75% positive) on a much bigger event sample (add 2024–2026 events; intraday) — but even
-at face value it reverts and would not survive transaction costs. Do NOT productize it.
+**Therefore the product's value is monitoring / detection / transparent synthesis (H7),
+NOT alpha** — which is what the dashboard already does well.
