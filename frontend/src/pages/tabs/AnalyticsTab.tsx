@@ -15,6 +15,7 @@ import RiskDecomposition from '../../components/RiskDecomposition'
 import BacktestPanel from '../../components/BacktestPanel'
 import LeadLagPanel from '../../components/LeadLagPanel'
 import HistoricalLeadLag from '../../components/HistoricalLeadLag'
+import ResearchHonesty from '../../components/ResearchHonesty'
 
 export default function AnalyticsTab() {
   return (
@@ -112,6 +113,15 @@ export default function AnalyticsTab() {
         tier="EST"
       >
         <HistoricalLeadLag />
+      </Panel>
+
+      {/* Research & Honesty — edge findings published transparently */}
+      <Panel
+        title="Research &amp; Honesty — Does This Predict Oil?"
+        subtitle="We tested our own signal for trading edge. It has none — and we publish that."
+        tier="LIVE"
+      >
+        <ResearchHonesty />
       </Panel>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
