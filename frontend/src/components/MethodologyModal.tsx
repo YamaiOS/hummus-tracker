@@ -123,7 +123,7 @@ export default function MethodologyModal({ open, onClose }: MethodologyModalProp
               {[
                 {
                   source: 'FRED (St. Louis Fed)',
-                  provides: 'Brent crude spot (DCOILBRENTEU) and WTI spot (DCOILWTICO); natural gas & LNG prices — Asia JKM proxy, EU/TTF proxy, US Henry Hub; crude-oil implied volatility index (OVX). Updated on trading days.',
+                  provides: 'Brent crude spot (DCOILBRENTEU) and WTI spot (DCOILWTICO, public-domain EIA); gas/LNG prices (IMF Primary Commodity Prices). Oil realized volatility is computed by us from Brent — we do not redistribute the CBOE OVX index. Updated on trading days.',
                 },
                 {
                   source: 'EIA (U.S. Energy Information Administration)',
@@ -276,7 +276,7 @@ export default function MethodologyModal({ open, onClose }: MethodologyModalProp
             <div className="space-y-2">
               {[
                 { label: 'Strait Flow', source: 'IMF PortWatch', tier: 'LIVE' as const, weight: '.22', desc: 'Chokepoint transit vessel counts vs. baseline; below-trend flow raises risk.' },
-                { label: 'Oil Volatility (OVX)', source: 'FRED', tier: 'LIVE' as const, weight: '.18', desc: 'CBOE Crude Oil Volatility Index — market-implied fear gauge for crude prices.' },
+                { label: 'Oil Volatility (Realized)', source: 'Brent/EIA', tier: 'LIVE' as const, weight: '.18', desc: 'Annualized realized volatility computed from public-domain Brent — a fear-gauge proxy (not the CBOE OVX index).' },
                 { label: 'News Pressure', source: 'Google News RSS', tier: 'LIVE' as const, weight: '.18', desc: 'Topic-weighted headline count from the Strait Intelligence Wire; conflict/sanction terms score higher.' },
                 { label: 'Shamal Wind', source: 'Open-Meteo', tier: 'LIVE' as const, weight: '.12', desc: 'Wind speed at Fujairah/Hormuz narrows; high Shamal conditions affect safe transit.' },
                 { label: 'War-Risk Insurance', source: 'Reference baseline', tier: 'EST' as const, weight: '.12', desc: 'Geopolitical premium in Hormuz hull/cargo insurance (manually updated).' },
