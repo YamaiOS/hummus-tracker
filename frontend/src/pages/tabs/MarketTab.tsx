@@ -13,7 +13,7 @@ import VolatilityWidget from '../../components/VolatilityWidget'
 export default function MarketTab() {
   return (
     <div className="space-y-4">
-      {/* Gas & LNG + OVX row */}
+      {/* Gas & LNG + Realized Vol row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
         <div className="lg:col-span-2">
           <Panel
@@ -27,8 +27,8 @@ export default function MarketTab() {
         </div>
         <div>
           <Panel
-            title="Oil Volatility (OVX)"
-            subtitle="Crude implied vol — risk sentiment"
+            title="Oil Volatility (Realized)"
+            subtitle="Annualized realized vol from Brent — public-domain proxy for OVX"
             tier="LIVE"
           >
             <VolatilityWidget />

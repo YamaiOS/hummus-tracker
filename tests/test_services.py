@@ -41,9 +41,9 @@ async def test_oil_volatility_shape():
     try:
         result = await get_oil_volatility()
     except Exception:
-        result = {"ovx": None, "regime": "unknown", "history": [], "source": ""}
+        result = {"rvol": None, "regime": "unknown", "history": [], "source": ""}
     assert isinstance(result, dict)
-    for key in ("ovx", "regime", "history", "source"):
+    for key in ("rvol", "regime", "history", "source"):
         assert key in result, f"Missing key: {key}"
 
 

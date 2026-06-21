@@ -172,7 +172,7 @@ async def compute_risk_index() -> dict:
         }, as_of)
 
     # ── 2. Oil volatility (weight .18, tier LIVE) ────────────────────────────
-    # Source: FRED OVX
+    # Source: Realized vol from FRED Brent (EIA, public domain)
     vol_result = _score_volatility(volatility_data)
     if vol_result is not None:
         s, detail, as_of = vol_result
@@ -181,7 +181,7 @@ async def compute_risk_index() -> dict:
             "score_0_100": round(s, 1),
             "weight": 0.18,
             "tier": "LIVE",
-            "source": "FRED OVX",
+            "source": "FRED/EIA Brent (realized vol)",
             "detail": detail,
         }, as_of)
 
@@ -366,16 +366,16 @@ def _score_flow(chokepoint_data: Optional[dict]) -> Optional[tuple[float, str, O
 
 
 def _score_volatility(vol: Optional[dict]) -> Optional[tuple[float, str, Optional[str]]]:
-    """Map OVX zscore or regime to 0-100.
+    """Map realized-vol zscore or regime to 0-100.
 
-    as_of = ovx_date, the date of the latest OVX close (daily cadence).
+    as_of = rvol_date, the date of the latest realized-vol observation (daily cadence).
     """
     try:
         if not vol:
             return None
         zscore = vol.get("zscore")
         regime = vol.get("regime", "unknown")
-        ovx = vol.get("ovx")
+        rvol = vol.get("rvol")
 
         if zscore is not None:
             score = _clamp(50.0 + 25.0 * float(zscore))
@@ -388,10 +388,10 @@ def _score_volatility(vol: Optional[dict]) -> Optional[tuple[float, str, Optiona
         else:
             return None
 
-        ovx_str = f"OVX {ovx:.1f}" if ovx is not None else "OVX n/a"
+        rvol_str = f"realized vol {rvol:.1f}%" if rvol is not None else "realized vol n/a"
         z_str = f", z={zscore:.2f}" if zscore is not None else ""
-        detail = f"{ovx_str}{z_str}, regime={regime}"
-        as_of = vol.get("ovx_date") or None
+        detail = f"{rvol_str}{z_str}, regime={regime}"
+        as_of = vol.get("rvol_date") or None
         return score, detail, as_of
     except Exception as exc:
         logger.warning("_score_volatility failed: %s", exc)

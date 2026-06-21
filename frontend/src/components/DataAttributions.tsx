@@ -11,19 +11,27 @@ export default function DataAttributions() {
         </p>
       </div>
 
-      {/* FRED */}
+      {/* FRED — Brent/WTI (EIA, public domain) */}
       <div className="bg-petro-bg rounded-lg px-4 py-3 border border-petro-border">
         <p className="text-[11px] text-text-faint leading-relaxed">
-          <span className="text-text-muted font-semibold">FRED / St. Louis Fed (Brent, WTI, Henry Hub):</span>{' '}
-          Brent/WTI/Henry Hub: U.S. EIA, retrieved from FRED, Federal Reserve Bank of St. Louis.
+          <span className="text-text-muted font-semibold">Brent &amp; WTI crude:</span>{' '}
+          U.S. EIA, retrieved from FRED, Federal Reserve Bank of St. Louis (public domain).
         </p>
       </div>
 
-      {/* CBOE OVX */}
+      {/* Gas / LNG — IMF Primary Commodity Prices (citation required) */}
       <div className="bg-petro-bg rounded-lg px-4 py-3 border border-petro-border">
         <p className="text-[11px] text-text-faint leading-relaxed">
-          <span className="text-text-muted font-semibold">CBOE OVX (oil volatility):</span>{' '}
-          CBOE Crude Oil Volatility Index (OVX) © Chicago Board Options Exchange, Inc., via FRED — displayed for reference.
+          <span className="text-text-muted font-semibold">Gas &amp; LNG prices (Asia/JKM, EU, US):</span>{' '}
+          IMF Primary Commodity Prices, retrieved from FRED — © International Monetary Fund, citation required. Monthly, lags spot.
+        </p>
+      </div>
+
+      {/* Oil realized volatility — self-computed (no CBOE OVX) */}
+      <div className="bg-petro-bg rounded-lg px-4 py-3 border border-petro-border">
+        <p className="text-[11px] text-text-faint leading-relaxed">
+          <span className="text-text-muted font-semibold">Oil realized volatility:</span>{' '}
+          Computed by us (21-day annualized) from public-domain Brent (EIA via FRED). Not the CBOE OVX index.
         </p>
       </div>
 

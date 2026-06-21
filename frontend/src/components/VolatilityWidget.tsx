@@ -22,7 +22,7 @@ export default function VolatilityWidget() {
   if (isLoading && !data) {
     return (
       <div className="h-[200px] flex items-center justify-center text-xs text-text-faint uppercase font-bold tracking-wide">
-        Loading OVX...
+        Loading realized vol...
       </div>
     )
   }
@@ -37,17 +37,17 @@ export default function VolatilityWidget() {
 
   const regime = data.regime ?? 'unknown'
   const style = REGIME_STYLES[regime] ?? REGIME_STYLES.unknown
-  const history = (data.history ?? []).filter(h => h.ovx != null)
+  const history = (data.history ?? []).filter(h => h.rvol != null)
 
   return (
     <div className="space-y-3">
-      {/* OVX value + regime badge */}
+      {/* Realized vol value + regime badge */}
       <div className="flex items-start justify-between gap-2">
         <div>
           <div className="text-3xl font-bold text-text-warm leading-none">
-            {data.ovx != null ? data.ovx.toFixed(1) : '—'}
+            {data.rvol != null ? `${data.rvol.toFixed(1)}%` : '—'}
           </div>
-          <div className="text-[10px] font-mono text-text-faint mt-1">OVX INDEX</div>
+          <div className="text-[10px] font-mono text-text-faint mt-1">REALIZED VOL (ANN.)</div>
         </div>
         <span className={`px-2 py-0.5 text-[11px] font-mono font-bold border rounded uppercase tracking-wider ${style.badge}`}>
           {style.label}
@@ -73,12 +73,12 @@ export default function VolatilityWidget() {
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={history} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
               <YAxis domain={['auto', 'auto']} hide />
-              {/* Faint calm/stressed vol bands */}
-              <ReferenceArea y1={0}  y2={40} fill="#2dd4bf" fillOpacity={0.06} ifOverflow="hidden" />
-              <ReferenceArea y1={60} y2={200} fill="#ef4444" fillOpacity={0.06} ifOverflow="hidden" />
+              {/* Faint calm/stressed vol bands (rvol typically 15-60%) */}
+              <ReferenceArea y1={0}  y2={25} fill="#2dd4bf" fillOpacity={0.06} ifOverflow="hidden" />
+              <ReferenceArea y1={45} y2={200} fill="#ef4444" fillOpacity={0.06} ifOverflow="hidden" />
               {/* Threshold reference lines */}
-              <ReferenceLine y={40} stroke="#2dd4bf" strokeDasharray="3 3" strokeOpacity={0.4} strokeWidth={1} />
-              <ReferenceLine y={60} stroke="#ef4444" strokeDasharray="3 3" strokeOpacity={0.4} strokeWidth={1} />
+              <ReferenceLine y={25} stroke="#2dd4bf" strokeDasharray="3 3" strokeOpacity={0.4} strokeWidth={1} />
+              <ReferenceLine y={45} stroke="#ef4444" strokeDasharray="3 3" strokeOpacity={0.4} strokeWidth={1} />
               <Tooltip
                 contentStyle={{
                   backgroundColor: '#0f1d32',
@@ -89,11 +89,11 @@ export default function VolatilityWidget() {
                 labelStyle={{ color: '#8b9bb4' }}
                 itemStyle={{ padding: '0px' }}
                 labelFormatter={(d: string) => new Date(d).toLocaleDateString()}
-                formatter={(v: number) => [`${v.toFixed(1)}`, 'OVX']}
+                formatter={(v: number) => [`${v.toFixed(1)}%`, 'Realized Vol']}
               />
               <Line
                 type="monotone"
-                dataKey="ovx"
+                dataKey="rvol"
                 stroke={style.color}
                 strokeWidth={1.5}
                 dot={false}
@@ -105,7 +105,7 @@ export default function VolatilityWidget() {
       )}
 
       <div className="text-[10px] font-mono text-text-faint uppercase">
-        CBOE Crude Oil Volatility (OVX) · FRED · {data.ovx_date ?? '—'}
+        Oil Realized Vol (21d) · Brent/EIA · {data.rvol_date ?? '—'}
       </div>
     </div>
   )

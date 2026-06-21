@@ -458,12 +458,13 @@ export interface GasPrices {
 export const fetchGasPrices = () => api.get<GasPrices>('/gas-prices').then(r => r.data)
 
 export interface Volatility {
-  ovx: number | null
-  ovx_date: string | null
+  rvol: number | null
+  rvol_date: string | null
   mean_252: number | null
   zscore: number | null
   regime: 'low' | 'elevated' | 'high' | 'unknown'
-  history: { date: string; ovx: number | null }[]
+  history: { date: string; rvol: number | null }[]
+  window_days?: number
   source: string
   updated_at: string
 }
