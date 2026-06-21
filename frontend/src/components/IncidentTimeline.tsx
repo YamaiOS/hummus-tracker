@@ -61,6 +61,10 @@ export default function IncidentTimeline() {
   }
 
   return (
+    <div className="space-y-2">
+      <p className="text-[10px] text-text-faint italic px-1">
+        Incident counts are a headline-keyword heuristic — may miss or over-count.
+      </p>
     <div className="space-y-0 max-h-96 overflow-y-auto pr-1 scrollbar-thin">
       {incidents.map((inc, i) => {
         const sevCfg = SEVERITY_CONFIG[(inc.severity as Severity)] ?? SEVERITY_CONFIG.warning
@@ -120,6 +124,7 @@ export default function IncidentTimeline() {
           </div>
         )
       })}
+    </div>
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
-import { X, CheckCircle2, AlertTriangle, Info, HelpCircle, Cpu } from 'lucide-react'
+import { X, CheckCircle2, AlertTriangle, Info, HelpCircle, Cpu, Database } from 'lucide-react'
+import DataAttributions from './DataAttributions'
 
 interface MethodologyModalProps {
   open: boolean
@@ -65,7 +66,7 @@ export default function MethodologyModal({ open, onClose }: MethodologyModalProp
             <p className="text-sm text-text-faint leading-relaxed">
               The dashboard runs on a <span className="text-text-warm font-semibold">static-snapshot / hourly-refresh</span> model.
               A backend pipeline fetches and caches all external sources once per hour via an external cron trigger.
-              The host process scales to zero between runs; the UI always reads from the latest cached snapshot — no data is streamed live to the browser.
+              The host process scales to zero between runs (~$0 at idle; expect ≈2–3 s cold start on first load); the UI always reads from the latest cached snapshot — no data is streamed live to the browser.
               The <span className="text-text-warm font-semibold">Data Freshness</span> badge in the header shows the age of the current snapshot.
             </p>
           </section>
@@ -343,6 +344,17 @@ export default function MethodologyModal({ open, onClose }: MethodologyModalProp
                 The GPR Index (Caldara &amp; Iacoviello) and IMF PortWatch are used under their respective public / Creative Commons terms.
               </li>
             </ul>
+          </section>
+
+          {/* Data Sources & Attributions */}
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <Database size={14} className="text-text-muted shrink-0" />
+              <h3 className="text-xs font-bold text-text-muted uppercase tracking-wide">
+                Data Sources &amp; Attributions
+              </h3>
+            </div>
+            <DataAttributions />
           </section>
 
         </div>
