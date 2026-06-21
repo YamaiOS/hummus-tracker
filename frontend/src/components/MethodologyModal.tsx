@@ -126,7 +126,7 @@ export default function MethodologyModal({ open, onClose }: MethodologyModalProp
                 },
                 {
                   source: 'EIA (U.S. Energy Information Administration)',
-                  provides: 'Petroleum supply/demand statistics; OPEC and Gulf state crude and liquids production by country; Strait of Hormuz throughput baseline reference (~20 mbpd).',
+                  provides: 'Petroleum supply/demand statistics; OPEC and Gulf state crude and liquids production by country; Strait of Hormuz throughput baseline reference (~20.9 mbpd).',
                 },
                 {
                   source: 'IMF PortWatch',
@@ -138,7 +138,7 @@ export default function MethodologyModal({ open, onClose }: MethodologyModalProp
                 },
                 {
                   source: 'USGS Earthquake Hazards',
-                  provides: 'Regional seismicity near Gulf terminals — recent M2.5+ events within 500 km of the Strait.',
+                  provides: 'Regional seismicity near Gulf terminals — M4.0+ events within the Gulf region bounding box (22–37°N, 44–62°E), last 14 days.',
                 },
                 {
                   source: 'Google News RSS',
@@ -146,7 +146,7 @@ export default function MethodologyModal({ open, onClose }: MethodologyModalProp
                 },
                 {
                   source: 'Caldara-Iacoviello GPR Index',
-                  provides: 'Peer-reviewed Geopolitical Risk Index (monthly), constructed from automated text-search counts in major newspapers. Captures global conflict/tensions that feed through to energy markets. Published by the Federal Reserve.',
+                  provides: 'Peer-reviewed Geopolitical Risk Index (monthly), constructed from automated text-search counts in major newspapers. Captures global conflict/tensions that feed through to energy markets. By Fed economists Caldara & Iacoviello (sourced from matteoiacoviello.com).',
                 },
               ].map(({ source, provides }) => (
                 <div key={source} className="flex gap-3 bg-petro-bg rounded-lg px-4 py-3 border border-petro-border">
@@ -177,7 +177,7 @@ export default function MethodologyModal({ open, onClose }: MethodologyModalProp
                 { label: 'Bunker prices', detail: 'Fujairah VLSFO/IFO380 bunker reference prices seeded from published market surveys (Ship & Bunker). Not a live market feed.' },
                 { label: 'Fujairah oil inventory', detail: 'Weekly inventory estimates derived from a seeded baseline; no live data connection.' },
                 { label: 'OPEC quotas', detail: 'Published OPEC+ production quota and compliance figures from official OPEC communiqués and IEA OMR.' },
-                { label: 'Bypass pipeline capacities', detail: 'Iraq–Turkey (Kirkuk–Ceyhan), UAE Habshan–Fujairah, and Saudi East–West (Petroline) bypass capacities from EIA/CNBC reference data.' },
+                { label: 'Bypass pipeline capacities', detail: 'Goreh–Jask (Iran), UAE Habshan–Fujairah, and Saudi East–West (Petroline) bypass capacities from EIA/CNBC reference data.' },
                 { label: 'Freight TCE heuristic', detail: 'VLCC time-charter equivalent estimate derived from Worldscale flat-rate tables and published rate indices; not a live Baltic Exchange feed.' },
                 { label: 'Historical disruption events', detail: 'Curated timeline of past Hormuz disruptions (tanker wars, seizures, mine incidents) from public historical records.' },
               ].map(({ label, detail }) => (
@@ -240,7 +240,7 @@ export default function MethodologyModal({ open, onClose }: MethodologyModalProp
                 },
                 {
                   label: 'Bypass Supply-Gap Model',
-                  detail: 'Estimates the volume gap that cannot be bypassed if Hormuz were disrupted, based on static EIA/CNBC pipeline capacity figures (UAE Habshan–Fujairah, Saudi Petroline, Iraq–Turkey). Not a live calculation; updates when EST baseline figures change.',
+                  detail: 'Estimates the volume gap that cannot be bypassed if Hormuz were disrupted, based on static EIA/CNBC pipeline capacity figures (Goreh–Jask Iran, UAE Habshan–Fujairah, Saudi Petroline). Not a live calculation; updates when EST baseline figures change.',
                 },
                 {
                   label: '"What-If Hormuz Closes" Scenario Calculator',
@@ -280,7 +280,7 @@ export default function MethodologyModal({ open, onClose }: MethodologyModalProp
                 { label: 'Shamal Wind', source: 'Open-Meteo', tier: 'LIVE' as const, weight: '.12', desc: 'Wind speed at Fujairah/Hormuz narrows; high Shamal conditions affect safe transit.' },
                 { label: 'War-Risk Insurance', source: 'Reference baseline', tier: 'EST' as const, weight: '.12', desc: 'Geopolitical premium in Hormuz hull/cargo insurance (manually updated).' },
                 { label: 'Geopolitical Risk (GPR)', source: 'Caldara-Iacoviello', tier: 'LIVE' as const, weight: '.10', desc: 'Peer-reviewed monthly GPR index; elevated readings reflect heightened global conflict tensions feeding into energy market risk.' },
-                { label: 'Seismic Activity', source: 'USGS', tier: 'LIVE' as const, weight: '.06', desc: 'Recent M2.5+ earthquake events near Gulf terminals.' },
+                { label: 'Seismic Activity', source: 'USGS', tier: 'LIVE' as const, weight: '.06', desc: 'M4.0+ earthquake events in the Gulf region bounding box (22–37°N, 44–62°E), last 14 days.' },
                 { label: 'Anomaly Vessels', source: 'AIS simulation', tier: 'SIM' as const, weight: '.12', desc: 'Dark-vessel and STS anomaly rate from the vessel simulation model.' },
               ].map(({ label, source, tier, weight, desc }) => (
                 <div key={label} className="flex gap-3 items-start bg-petro-bg rounded-lg px-4 py-3 border border-petro-border">

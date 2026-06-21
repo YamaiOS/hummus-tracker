@@ -63,7 +63,7 @@ export default function Dashboard() {
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-1.5 flex items-center gap-2">
           <span className="text-[11px] text-text-faint font-mono">
             <span className="text-text-muted font-bold uppercase">R&D PREVIEW</span>
-            {' '}— Data streaming may take up to 15s to initialize. Enterprise configuration recommended for live trading decisions.
+            {' '}— hourly static snapshot of public data. Not financial, trading, or operational advice.
           </span>
         </div>
       </div>

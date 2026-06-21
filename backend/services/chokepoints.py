@@ -159,18 +159,21 @@ async def _fetch_one_chokepoint(
             "n_tanker": n_tanker,
         })
 
-    # rows are DESC; latest is first
-    latest = rows_data[0] if rows_data else {}
+    # IMPORTANT: IMF PortWatch's most-recent date(s) are frequently NOT-YET-REPORTED
+    # (n_total == 0 or None) due to satellite-AIS processing lag, while neighbouring
+    # chokepoints already have data. Treating that trailing 0 as "0% of baseline"
+    # would falsely read as a Strait shutdown and cascade into a SEVERE risk score
+    # and a "LNG SUPPLY CRITICAL" banner. So use only rows that ACTUALLY have data:
+    # latest = most recent reported (truthy n_total) day; baseline = next 30 reported.
+    valid_rows = [r for r in rows_data if r.get("n_total")]   # truthy → excludes 0/None
+    latest = valid_rows[0] if valid_rows else {}
     latest_total = latest.get("n_total")
     latest_tanker = latest.get("n_tanker")
     latest_date = latest.get("date")
 
-    # 30-day trailing baseline from rows 1..30 (exclude the very latest to avoid
-    # partial-day noise), fallback to all rows if fewer than 2
-    baseline_rows = rows_data[1:31] if len(rows_data) > 1 else rows_data
-    valid_totals = [r["n_total"] for r in baseline_rows if r.get("n_total") is not None]
+    baseline_vals = [r["n_total"] for r in valid_rows[1:31]]
     baseline_total_30d: Optional[float] = (
-        sum(valid_totals) / len(valid_totals) if valid_totals else None
+        sum(baseline_vals) / len(baseline_vals) if baseline_vals else None
     )
 
     pct_of_baseline: Optional[float] = None

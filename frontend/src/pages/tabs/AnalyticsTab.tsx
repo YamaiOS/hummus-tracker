@@ -40,7 +40,7 @@ export default function AnalyticsTab() {
         </Panel>
         <Panel
           title="Geopolitical Risk (GPR)"
-          subtitle="Caldara-Iacoviello index — newspaper-based, backtested to 1900"
+          subtitle="newspaper-based geopolitical-risk index, monthly"
           footer="MONTHLY · CALDARA &amp; IACOVIELLO"
           tier="LIVE"
         >

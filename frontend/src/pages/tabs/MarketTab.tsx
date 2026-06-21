@@ -50,7 +50,7 @@ export default function MarketTab() {
           <Panel title="Fujairah Inventory" subtitle="Weekly stock levels ('000 bbl)" tier="EST">
             <FujairahInventoryPanel />
           </Panel>
-          <Panel title="OPEC+ Compliance" subtitle="Quota vs observed exports (7-day)" tier="EST">
+          <Panel title="OPEC+ Compliance" subtitle="Quota vs observed exports — derived from SIMULATED vessel flows" tier="SIM">
             <OPECCompliancePanel />
           </Panel>
           <Panel

@@ -241,27 +241,37 @@ export default function CommandCenter() {
             )}
           </div>
 
-          {/* Tankers active */}
-          <StatCell
-            label="Tankers Active"
-            icon={Layers}
-            value={loading ? '—' : fmt(ss?.tankers_active)}
-            sub={ss ? `${fmt(ss.vessels_tracked)} tracked` : undefined}
-          />
+          {/* Tankers active — SIM (vessel data) */}
+          <div className="flex flex-col gap-0.5 min-w-0">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <Layers size={10} className="text-text-faint shrink-0" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-text-faint truncate">Tankers Active</span>
+              <span className="text-[9px] font-bold text-petro-gold uppercase tracking-wide">SIM</span>
+            </div>
+            <span className="text-lg font-mono font-bold leading-none tracking-tight">
+              {loading ? '—' : fmt(ss?.tankers_active)}
+            </span>
+            {ss && <span className="text-[10px] text-text-faint font-mono mt-0.5 truncate">{fmt(ss.vessels_tracked)} tracked</span>}
+          </div>
 
-          {/* Loaded outbound */}
-          <StatCell
-            label="Loaded Outbound"
-            icon={TrendingUp}
-            value={loading ? '—' : fmt(ss?.loaded_tankers)}
-            sub={ss ? `${fmt(ss.ballast_tankers)} ballast` : undefined}
-          />
+          {/* Loaded outbound — SIM (vessel data) */}
+          <div className="flex flex-col gap-0.5 min-w-0">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <TrendingUp size={10} className="text-text-faint shrink-0" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-text-faint truncate">Loaded Outbound</span>
+              <span className="text-[9px] font-bold text-petro-gold uppercase tracking-wide">SIM</span>
+            </div>
+            <span className="text-lg font-mono font-bold leading-none tracking-tight">
+              {loading ? '—' : fmt(ss?.loaded_tankers)}
+            </span>
+            {ss && <span className="text-[10px] text-text-faint font-mono mt-0.5 truncate">{fmt(ss.ballast_tankers)} ballast</span>}
+          </div>
 
-          {/* Est. flow */}
+          {/* EIA Baseline — static reference figure */}
           <div className="flex flex-col gap-0.5 min-w-0">
             <div className="flex items-center gap-1.5 mb-0.5">
               <Droplets size={10} className="text-text-faint shrink-0" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-text-faint truncate">Est. Flow</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-text-faint truncate">EIA Baseline</span>
             </div>
             {loading ? (
               <SkeletonBlock className="h-5 w-16" />
@@ -271,7 +281,7 @@ export default function CommandCenter() {
                 <span className="text-[11px] font-normal text-text-faint ml-1">mbpd</span>
               </span>
             )}
-            <span className="text-[10px] text-text-faint font-mono mt-0.5">EIA baseline</span>
+            <span className="text-[10px] text-text-faint font-mono mt-0.5">static — not live</span>
           </div>
 
           {/* Brent price */}
@@ -292,21 +302,31 @@ export default function CommandCenter() {
             </span>
           </div>
 
-          {/* Dark vessels */}
-          <StatCell
-            label="Dark Vessels"
-            icon={EyeOff}
-            value={loading ? '—' : fmt(ss?.dark_vessel_count ?? 0)}
-            sub="AIS-off"
-          />
+          {/* Dark vessels — SIM (vessel data) */}
+          <div className="flex flex-col gap-0.5 min-w-0">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <EyeOff size={10} className="text-text-faint shrink-0" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-text-faint truncate">Dark Vessels</span>
+              <span className="text-[9px] font-bold text-petro-gold uppercase tracking-wide">SIM</span>
+            </div>
+            <span className="text-lg font-mono font-bold leading-none tracking-tight">
+              {loading ? '—' : fmt(ss?.dark_vessel_count ?? 0)}
+            </span>
+            <span className="text-[10px] text-text-faint font-mono mt-0.5 truncate">AIS-off</span>
+          </div>
 
-          {/* STS events */}
-          <StatCell
-            label="STS Events"
-            icon={Eye}
-            value={loading ? '—' : fmt(ss?.sts_event_count ?? 0)}
-            sub="ship-to-ship"
-          />
+          {/* STS events — SIM (vessel data) */}
+          <div className="flex flex-col gap-0.5 min-w-0">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <Eye size={10} className="text-text-faint shrink-0" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-text-faint truncate">STS Events</span>
+              <span className="text-[9px] font-bold text-petro-gold uppercase tracking-wide">SIM</span>
+            </div>
+            <span className="text-lg font-mono font-bold leading-none tracking-tight">
+              {loading ? '—' : fmt(ss?.sts_event_count ?? 0)}
+            </span>
+            <span className="text-[10px] text-text-faint font-mono mt-0.5 truncate">ship-to-ship</span>
+          </div>
         </div>
 
         {/* ── Row 3: Freshness line ────────────────────────────────────────── */}
